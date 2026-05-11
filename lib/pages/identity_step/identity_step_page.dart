@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:hibah_2026/pages/identity_step/identity_step_flow_delegate.dart';
 import 'package:hibah_2026/widgets/form_header_widget.dart';
 import 'package:hibah_2026/widgets/gender_radio_group_widget.dart';
 
-class IdentityStepPage extends StatelessWidget {
-  const IdentityStepPage({super.key});
+class IdentityStepPage extends StatefulWidget {
+  const IdentityStepPage({super.key, required this.delegate});
+
+  final IdentityStepFlowDelegate delegate;
+
+  @override
+  State<IdentityStepPage> createState() => IdentityStepPageState();
+}
+
+class IdentityStepPageState extends State<IdentityStepPage> {
+  final formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -22,19 +32,32 @@ class IdentityStepPage extends StatelessWidget {
                     labelText: 'Nama',
                     hintText: 'John Doe',
                   ),
+                  controller: widget.delegate.nameController,
                 ),
                 TextFormField(
                   decoration: InputDecoration(
                     labelText: 'Usia',
                     hintText: '20',
                   ),
+                  controller: widget.delegate.ageController,
                 ),
-                GenderRadioGroupWidget(),
+                ListenableBuilder(
+                  listenable: widget.delegate,
+                  builder: (context, _) {
+                    return GenderRadioGroupWidget(
+                      value: widget.delegate.gender,
+                      onChanged: (Gender? value) {
+                        widget.delegate.setGender(value);
+                      },
+                    );
+                  },
+                ),
                 TextFormField(
                   decoration: InputDecoration(
                     labelText: 'Pekerjaan',
                     hintText: 'Mahasiswa',
                   ),
+                  controller: widget.delegate.occupationController,
                 ),
               ],
             ),

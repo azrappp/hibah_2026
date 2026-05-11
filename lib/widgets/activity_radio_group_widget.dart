@@ -1,25 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:hibah_2026/widgets/card_widget.dart';
 
-enum Activity { veryLow, low, medium, high }
+enum Activity {
+  veryLow,
+  low,
+  medium,
+  high;
 
-class ActivityRadioGroupWidget extends StatefulWidget {
-  const ActivityRadioGroupWidget({super.key});
+  String get label {
+    switch (this) {
+      case Activity.veryLow:
+        return 'Sangat Rendah';
 
-  @override
-  State<ActivityRadioGroupWidget> createState() =>
-      _ActivityRadioGroupWidgetState();
+      case Activity.low:
+        return 'Rendah';
+
+      case Activity.medium:
+        return 'Sedang';
+
+      case Activity.high:
+        return 'Tinggi';
+    }
+  }
 }
 
-class _ActivityRadioGroupWidgetState extends State<ActivityRadioGroupWidget> {
-  Activity? _activity = Activity.veryLow;
+class ActivityRadioGroupWidget extends StatelessWidget {
+  const ActivityRadioGroupWidget({
+    super.key,
+    this.value,
+    required this.onChanged,
+  });
+
+  final Activity? value;
+  final ValueChanged<Activity?> onChanged;
+
   @override
   Widget build(BuildContext context) {
     return RadioGroup<Activity>(
-      groupValue: _activity,
-      onChanged: (Activity? value) => setState(() {
-        _activity = value;
-      }),
+      groupValue: value,
+      onChanged: onChanged,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -28,7 +47,7 @@ class _ActivityRadioGroupWidgetState extends State<ActivityRadioGroupWidget> {
             children: [
               CardWidget(
                 padding: 0.0,
-                color: _activity == Activity.veryLow
+                color: value == Activity.veryLow
                     ? Theme.of(context).colorScheme.secondaryContainer
                     : null,
                 child: ListTile(
@@ -45,7 +64,7 @@ class _ActivityRadioGroupWidgetState extends State<ActivityRadioGroupWidget> {
               ),
               CardWidget(
                 padding: 0.0,
-                color: _activity == Activity.low
+                color: value == Activity.low
                     ? Theme.of(context).colorScheme.secondaryContainer
                     : null,
                 child: ListTile(
@@ -62,7 +81,7 @@ class _ActivityRadioGroupWidgetState extends State<ActivityRadioGroupWidget> {
               ),
               CardWidget(
                 padding: 0.0,
-                color: _activity == Activity.medium
+                color: value == Activity.medium
                     ? Theme.of(context).colorScheme.secondaryContainer
                     : null,
                 child: ListTile(
@@ -79,7 +98,7 @@ class _ActivityRadioGroupWidgetState extends State<ActivityRadioGroupWidget> {
               ),
               CardWidget(
                 padding: 0.0,
-                color: _activity == Activity.high
+                color: value == Activity.high
                     ? Theme.of(context).colorScheme.secondaryContainer
                     : null,
                 child: ListTile(

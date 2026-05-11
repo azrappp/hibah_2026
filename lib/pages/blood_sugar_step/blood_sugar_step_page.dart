@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:hibah_2026/pages/blood_sugar_step/blood_sugar_step_flow_delegate.dart';
 import 'package:hibah_2026/widgets/form_header_widget.dart';
 
-class BloodSugarStepPage extends StatelessWidget {
-  const BloodSugarStepPage({super.key});
+class BloodSugarStepPage extends StatefulWidget {
+  const BloodSugarStepPage({super.key, required this.delegate});
+
+  final BloodSugarStepFlowDelegate delegate;
+
+  @override
+  State<BloodSugarStepPage> createState() => _BloodSugarStepPageState();
+}
+
+class _BloodSugarStepPageState extends State<BloodSugarStepPage> {
+  final formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +32,7 @@ class BloodSugarStepPage extends StatelessWidget {
                     hintText: '88',
                     helperText: 'Gula darah puasa (mg/dL)',
                   ),
+                  controller: widget.delegate.fpgController,
                 ),
                 TextFormField(
                   decoration: InputDecoration(
@@ -29,6 +40,7 @@ class BloodSugarStepPage extends StatelessWidget {
                     hintText: '110',
                     helperText: 'Gula darah 2 jam setelah OGTT (mg/dL)',
                   ),
+                  controller: widget.delegate.twoHPgController,
                 ),
                 TextFormField(
                   decoration: InputDecoration(
@@ -36,6 +48,7 @@ class BloodSugarStepPage extends StatelessWidget {
                     hintText: '95',
                     helperText: 'Gula darah sewaktu (mg/dL)',
                   ),
+                  controller: widget.delegate.randPgController,
                 ),
                 TextFormField(
                   decoration: InputDecoration(
@@ -43,6 +56,7 @@ class BloodSugarStepPage extends StatelessWidget {
                     hintText: '5.2',
                     helperText: 'Rata-rata gula darah 2-3 bulan terakhir (%)',
                   ),
+                  controller: widget.delegate.a1cController,
                 ),
               ],
             ),
