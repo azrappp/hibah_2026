@@ -2,22 +2,21 @@ import 'package:flutter/material.dart';
 
 enum Gender { male, female }
 
-class GenderRadioGroupWidget extends StatefulWidget {
-  const GenderRadioGroupWidget({super.key});
+class GenderRadioGroupWidget extends StatelessWidget {
+  const GenderRadioGroupWidget({
+    super.key,
+    this.value,
+    required this.onChanged,
+  });
 
-  @override
-  State<GenderRadioGroupWidget> createState() => _GenderRadioGroupWidgetState();
-}
+  final Gender? value;
+  final ValueChanged<Gender?> onChanged;
 
-class _GenderRadioGroupWidgetState extends State<GenderRadioGroupWidget> {
-  Gender? _gender = Gender.male;
   @override
   Widget build(BuildContext context) {
     return RadioGroup<Gender>(
-      groupValue: _gender,
-      onChanged: (Gender? value) => setState(() {
-        _gender = value;
-      }),
+      groupValue: value,
+      onChanged: onChanged,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
