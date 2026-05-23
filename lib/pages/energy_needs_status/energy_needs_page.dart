@@ -3,6 +3,9 @@ import 'package:hibah_2026/pages/energy_needs_status/energy_needs_status_flow_de
 import 'package:hibah_2026/pages/nutrition_status/nutrition_status_page.dart';
 import 'package:hibah_2026/widgets/card_widget.dart';
 import 'package:hibah_2026/widgets/form_header_widget.dart';
+import 'package:hibah_2026/app_session.dart';
+import 'package:provider/provider.dart';
+import 'package:hibah_2026/pages/home_page.dart';
 
 class EnergyNeedsPage extends StatefulWidget {
   const EnergyNeedsPage({super.key, required this.delegate});
@@ -31,12 +34,13 @@ class _EnergyNeedsPageState extends State<EnergyNeedsPage> {
 
         final response = widget.delegate.apiResponse;
 
-        return Padding(
+        return SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             spacing: 16.0,
             children: <Widget>[
               FormHeader(title: 'Kebutuhan Energi'),
+
               CardWidget(
                 width: double.infinity,
                 height: 398.0,
@@ -51,9 +55,9 @@ class _EnergyNeedsPageState extends State<EnergyNeedsPage> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    Spacer(),
+                    const Spacer(),
                     Text(
-                      '${response?.data?['data']['dailyEnergyKcal']}',
+                      '${response?.data?['data']['dailyEnergyKcal'] ?? '-'}',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.primary,
                         fontFamily: 'GeistMono',
@@ -61,10 +65,9 @@ class _EnergyNeedsPageState extends State<EnergyNeedsPage> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-
-                    Spacer(),
+                    const Spacer(),
                     Text(
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi.',
+                      'Kebutuhan energi harian dihitung berdasarkan data screening dan aktivitas fisik.',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -73,31 +76,64 @@ class _EnergyNeedsPageState extends State<EnergyNeedsPage> {
                   ],
                 ),
               ),
+
               Row(
                 spacing: 16.0,
                 children: <Widget>[
                   Expanded(
                     child: SummaryCard(
                       label: 'Karbohidrat',
-                      value: '${response?.data?['data']['carbohydrateGram']}',
+                      value:
+                          '${response?.data?['data']['carbohydrateGram'] ?? '-'}',
                       unit: 'g',
                     ),
                   ),
                   Expanded(
                     child: SummaryCard(
                       label: 'Lemak',
-                      value: '${response?.data?['data']['fatGram']}',
+                      value: '${response?.data?['data']['fatGram'] ?? '-'}',
                       unit: 'g',
                     ),
                   ),
                   Expanded(
                     child: SummaryCard(
                       label: 'Protein',
-                      value: '${response?.data?['data']['proteinGram']}',
+                      value: '${response?.data?['data']['proteinGram'] ?? '-'}',
                       unit: 'g',
                     ),
                   ),
                 ],
+              ),
+
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    final flowData = widget.delegate.flowData;
+
+                    debugPrint('clientId: ${flowData.clientId}');
+                    debugPrint('screeningId: ${flowData.screeningId}');
+
+                    if (flowData.clientId != null &&
+                        flowData.screeningId != null) {
+                      Provider.of<AppSession>(
+                        context,
+                        listen: false,
+                      ).setFlowData(
+                        clientId: flowData.clientId!,
+                        screeningId: flowData.screeningId!,
+                      );
+                    }
+
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const HomePage()),
+                      (route) => false,
+                    );
+                  },
+                  icon: const Icon(Icons.home_rounded),
+                  label: const Text('Selesai dan Kembali ke Home'),
+                ),
               ),
             ],
           ),

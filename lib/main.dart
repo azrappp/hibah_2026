@@ -20,11 +20,17 @@ import 'package:hibah_2026/pages/medicine_step/medicine_consumption_step_page.da
 import 'package:hibah_2026/pages/medicine_step/medicine_step_flow_delegate.dart';
 import 'package:hibah_2026/pages/nutrition_status/nutrition_status_flow_delegate.dart';
 import 'package:hibah_2026/pages/nutrition_status/nutrition_status_page.dart';
-import 'package:hibah_2026/pages/screening_page.dart';
+import 'package:hibah_2026/pages/home_page.dart';
 import 'package:provider/provider.dart';
+import 'package:hibah_2026/app_session.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final appSession = AppSession();
+  await appSession.loadSession();
+
+  runApp(ChangeNotifierProvider.value(value: appSession, child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -33,18 +39,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Meal Recomendation',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         fontFamily: 'IBM',
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        inputDecorationTheme: InputDecorationTheme(
+        inputDecorationTheme: const InputDecorationTheme(
           border: OutlineInputBorder(),
         ),
       ),
-      home: ChangeNotifierProvider(
-        create: (_) => FlowController(),
-        child: ScreeningPage(),
-      ),
+      home: const HomePage(),
     );
   }
 }
@@ -52,16 +56,27 @@ class MyApp extends StatelessWidget {
 class FlowData {
   String? clientId;
   String? screeningId;
-  FlowData();
+  bool isRepeatScreening;
+
+  FlowData({this.clientId, this.screeningId, this.isRepeatScreening = false});
 }
 
 class FlowController extends ChangeNotifier {
   late final List<FlowStep> steps;
-  final flowData = FlowData();
+
+  final FlowData flowData;
 
   int currentIndex = 0;
 
-  FlowController() {
+  FlowController({
+    String? clientId,
+    String? screeningId,
+    bool isRepeatScreening = false,
+  }) : flowData = FlowData(
+         clientId: clientId,
+         screeningId: screeningId,
+         isRepeatScreening: isRepeatScreening,
+       ) {
     final identityStepFlowDelegate = IdentityStepFlowDelegate(
       backable: false,
       flowData: flowData,
@@ -112,7 +127,7 @@ class FlowController extends ChangeNotifier {
       flowData: flowData,
     );
 
-    steps = <FlowStep>[
+    final allSteps = <FlowStep>[
       FlowStep(
         id: 'form1',
         type: StepType.form,
@@ -174,17 +189,20 @@ class FlowController extends ChangeNotifier {
         delegate: energyStatusFlowDelegate,
       ),
     ];
+
+    if (isRepeatScreening) {
+      steps = allSteps.skip(1).toList();
+    } else {
+      steps = allSteps;
+    }
   }
 
   FlowStep get currentStep => steps[currentIndex];
 
-  double get progress {
-    return (currentIndex + 1) / steps.length;
-  }
+  double get progress => (currentIndex + 1) / steps.length;
 
   bool get canGoBack {
     if (currentIndex == 0) return false;
-
     return currentStep.delegate.canGoBack;
   }
 
