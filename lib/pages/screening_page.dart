@@ -11,27 +11,47 @@ class ScreeningPage extends StatefulWidget {
 
 class _ScreeningPageState extends State<ScreeningPage> {
   late final PageController _controller;
+  VoidCallback? _flowListener;
+
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color background = Color(0xFFF7F7F7);
 
   @override
   void initState() {
     super.initState();
+
     _controller = PageController();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
       final flow = context.read<FlowController>();
 
-      flow.addListener(() {
-        _controller.animateToPage(
-          flow.currentIndex,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      });
+      _flowListener = () {
+        if (!_controller.hasClients) return;
+
+        final targetPage = flow.currentIndex;
+        final currentPage = _controller.page?.round();
+
+        if (currentPage == targetPage) return;
+
+        _controller.jumpToPage(targetPage);
+      };
+
+      flow.addListener(_flowListener!);
     });
   }
 
   @override
   void dispose() {
+    final flow = context.read<FlowController>();
+
+    if (_flowListener != null) {
+      flow.removeListener(_flowListener!);
+    }
+
     _controller.dispose();
     super.dispose();
   }
@@ -41,75 +61,141 @@ class _ScreeningPageState extends State<ScreeningPage> {
     return Consumer<FlowController>(
       builder: (_, flow, _) {
         final delegate = flow.currentStep.delegate;
+        final isLastStep = flow.currentIndex == flow.steps.length - 1;
+        final pages = flow.steps.map((e) => e.page).toList();
+
         return Scaffold(
+          resizeToAvoidBottomInset: true,
+          backgroundColor: background,
+
           appBar: AppBar(
+            elevation: 0,
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.white,
+            foregroundColor: textDark,
+            title: const Text(
+              'Screening Kesehatan',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                color: textDark,
+              ),
+            ),
+            centerTitle: false,
             bottom: PreferredSize(
-              preferredSize: Size.fromHeight(4.0),
-              child: LinearProgressIndicator(
-                // ignore: deprecated_member_use
-                year2023: false,
-                trackGap: 8.0,
-                value: flow.progress,
+              preferredSize: const Size.fromHeight(8),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(100),
+                  child: LinearProgressIndicator(
+                    value: flow.progress,
+                    minHeight: 6,
+                    backgroundColor: healthGreenSoft,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      healthGreen,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-          body: Column(
-            children: <Widget>[
-              Expanded(
-                child: PageView(
-                  controller: _controller,
-                  physics: NeverScrollableScrollPhysics(),
-                  children: flow.steps.map((e) => e.page).toList(),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 32.0,
-                ),
-                child: Row(
-                  spacing: 16.0,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    if (flow.canGoBack)
-                      Expanded(
-                        child: TextButton(
-                          style: TextButton.styleFrom(
-                            fixedSize: Size.fromHeight(56.0),
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primaryContainer,
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.onPrimaryContainer,
-                          ),
-                          onPressed: flow.prev,
-                          child: Text("Kembali"),
-                        ),
-                      ),
 
-                    if (flow.currentIndex != flow.steps.length - 1)
-                      Expanded(
-                        child: TextButton(
-                          style: TextButton.styleFrom(
-                            fixedSize: Size.fromHeight(56.0),
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primary,
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.onPrimary,
+          body: SafeArea(
+            top: false,
+            bottom: false,
+            child: PageView(
+              controller: _controller,
+              physics: const NeverScrollableScrollPhysics(),
+              children: pages,
+            ),
+          ),
+
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              decoration: const BoxDecoration(color: background),
+
+              // IMPORTANT:
+              // This listens to the delegate loading state.
+              child: ListenableBuilder(
+                listenable: delegate as Listenable,
+                builder: (context, _) {
+                  final isLoading = delegate.isLoading;
+
+                  return Row(
+                    children: [
+                      if (flow.canGoBack) ...[
+                        Expanded(
+                          child: SizedBox(
+                            height: 54,
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: healthGreen,
+                                disabledForegroundColor: healthGreen.withValues(
+                                  alpha: 0.5,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              onPressed: isLoading ? null : flow.prev,
+                              child: const Text('Kembali'),
+                            ),
                           ),
-                          onPressed: delegate.isLoading
-                              ? null
-                              : () async => await flow.next(),
-                          child: Text('Lanjutkan'),
                         ),
-                      ),
-                  ],
-                ),
+                        const SizedBox(width: 14),
+                      ],
+
+                      if (!isLastStep)
+                        Expanded(
+                          child: SizedBox(
+                            height: 54,
+                            child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: healthGreen,
+                                disabledBackgroundColor: healthGreen.withValues(
+                                  alpha: 0.35,
+                                ),
+                                foregroundColor: Colors.white,
+                                disabledForegroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              onPressed: isLoading
+                                  ? null
+                                  : () async {
+                                      await flow.next();
+                                    },
+                              child: isLoading
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.4,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text('Lanjutkan'),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
-            ],
+            ),
           ),
         );
       },

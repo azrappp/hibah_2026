@@ -5,29 +5,47 @@ class MiniLineChart extends StatelessWidget {
   const MiniLineChart({
     super.key,
     required this.values,
+    required this.height,
     this.labels,
-    this.height = 78,
-    this.lineColor = const Color(0xFF5E4AA0),
     this.unit = '',
   });
 
   final List<double> values;
   final List<String>? labels;
-  final double height;
-  final Color lineColor;
   final String unit;
+  final double height;
+
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color gridSoft = Color(0xFFEDEDED);
+  static const Color textSoft = Color(0xFF8A8A8A);
+  static const Color textDark = Color(0xFF25262A);
 
   @override
   Widget build(BuildContext context) {
-    if (values.length < 2) {
+    if (values.isEmpty) {
       return SizedBox(
         height: height,
         child: Center(
           child: Text(
-            'Belum cukup data',
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey.shade600,
+            'Belum ada data grafik.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: textSoft,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (values.length == 1) {
+      return SizedBox(
+        height: height,
+        child: Center(
+          child: Text(
+            'Data pertama: ${formatValue(values.first)} $unit',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: textSoft,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -39,144 +57,225 @@ class MiniLineChart extends StatelessWidget {
       return FlSpot(entry.key.toDouble(), entry.value);
     }).toList();
 
-    final minValue = values.reduce((a, b) => a < b ? a : b);
-    final maxValue = values.reduce((a, b) => a > b ? a : b);
-
-    final yPadding = ((maxValue - minValue).abs() * 0.18).clamp(1.0, 20.0);
+    final minY = getMinY(values);
+    final maxY = getMaxY(values);
 
     return SizedBox(
       height: height,
-      child: LineChart(
-        LineChartData(
-          minX: 0,
-          maxX: (values.length - 1).toDouble(),
-          minY: minValue == maxValue ? minValue - 1 : minValue - yPadding,
-          maxY: minValue == maxValue ? maxValue + 1 : maxValue + yPadding,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(6, 4, 10, 4),
+        child: LineChart(
+          LineChartData(
+            minX: 0,
+            maxX: (values.length - 1).toDouble(),
+            minY: minY,
+            maxY: maxY,
 
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: getHorizontalInterval(minValue, maxValue),
-            getDrawingHorizontalLine: (_) =>
-                FlLine(color: Colors.grey.withOpacity(0.15), strokeWidth: 1),
-          ),
+            clipData: const FlClipData.all(),
 
-          titlesData: const FlTitlesData(show: false),
-          borderData: FlBorderData(show: false),
-
-          lineTouchData: LineTouchData(
-            enabled: true,
-            handleBuiltInTouches: true,
-            touchSpotThreshold: 22,
-            getTouchedSpotIndicator: (barData, spotIndexes) {
-              return spotIndexes.map((index) {
-                return TouchedSpotIndicatorData(
-                  FlLine(color: lineColor.withOpacity(0.35), strokeWidth: 2),
-                  FlDotData(
-                    show: true,
-                    getDotPainter: (spot, percent, barData, index) {
-                      return FlDotCirclePainter(
-                        radius: 5,
-                        color: Colors.white,
-                        strokeWidth: 3,
-                        strokeColor: lineColor,
-                      );
-                    },
-                  ),
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              horizontalInterval: getInterval(minY, maxY),
+              getDrawingHorizontalLine: (value) {
+                return const FlLine(
+                  color: gridSoft,
+                  strokeWidth: 1,
+                  dashArray: [4, 4],
                 );
-              }).toList();
-            },
-            touchTooltipData: LineTouchTooltipData(
-              tooltipRoundedRadius: 12,
-              tooltipPadding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 8,
-              ),
-              tooltipMargin: 10,
-              fitInsideHorizontally: true,
-              fitInsideVertically: true,
-              getTooltipColor: (_) => const Color(0xFF202124),
-              getTooltipItems: (spots) {
-                return spots.map((spot) {
-                  final index = spot.x.toInt();
-                  final value = spot.y;
-                  final label = getLabel(index);
+              },
+            ),
 
-                  return LineTooltipItem(
-                    '${formatNumber(value)} $unit\n$label',
-                    const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      height: 1.35,
+            titlesData: FlTitlesData(
+              leftTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: labels != null && labels!.isNotEmpty,
+                  reservedSize: 28,
+                  interval: 1,
+                  getTitlesWidget: (value, meta) {
+                    final index = value.toInt();
+
+                    if (labels == null ||
+                        index < 0 ||
+                        index >= labels!.length ||
+                        index >= values.length) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        shortLabel(labels![index]),
+                        style: const TextStyle(
+                          color: textSoft,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            borderData: FlBorderData(show: false),
+
+            lineTouchData: LineTouchData(
+              enabled: true,
+              touchTooltipData: LineTouchTooltipData(
+                tooltipRoundedRadius: 12,
+                tooltipPadding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                getTooltipColor: (_) => textDark,
+                getTooltipItems: (spots) {
+                  return spots.map((spot) {
+                    final index = spot.x.toInt();
+                    final label = getTooltipLabel(index);
+
+                    return LineTooltipItem(
+                      '$label\n${formatValue(spot.y)} $unit',
+                      const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    );
+                  }).toList();
+                },
+              ),
+              getTouchedSpotIndicator: (barData, spotIndexes) {
+                return spotIndexes.map((index) {
+                  return TouchedSpotIndicatorData(
+                    const FlLine(color: healthGreen, strokeWidth: 1.4),
+                    FlDotData(
+                      show: true,
+                      getDotPainter: (spot, percent, barData, index) {
+                        return FlDotCirclePainter(
+                          radius: 5,
+                          color: Colors.white,
+                          strokeWidth: 3,
+                          strokeColor: healthGreen,
+                        );
+                      },
                     ),
-                    textAlign: TextAlign.center,
                   );
                 }).toList();
               },
             ),
+
+            lineBarsData: [
+              LineChartBarData(
+                spots: spots,
+                isCurved: true,
+                curveSmoothness: 0.32,
+                color: healthGreen,
+                barWidth: 3,
+                isStrokeCapRound: true,
+                preventCurveOverShooting: true,
+                belowBarData: BarAreaData(
+                  show: true,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      healthGreen.withValues(alpha: 0.22),
+                      healthGreen.withValues(alpha: 0.3),
+                    ],
+                  ),
+                ),
+                dotData: FlDotData(
+                  show: true,
+                  getDotPainter: (spot, percent, barData, index) {
+                    return FlDotCirclePainter(
+                      radius: 3.8,
+                      color: Colors.white,
+                      strokeWidth: 2.4,
+                      strokeColor: healthGreen,
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
 
-          lineBarsData: [
-            LineChartBarData(
-              spots: spots,
-              isCurved: true,
-              curveSmoothness: 0.32,
-              preventCurveOverShooting: true,
-              barWidth: 3,
-              color: lineColor,
-              isStrokeCapRound: true,
-              isStrokeJoinRound: true,
-              dotData: FlDotData(
-                show: true,
-                checkToShowDot: (spot, barData) {
-                  return spot.x == 0 || spot.x == values.length - 1;
-                },
-                getDotPainter: (spot, percent, barData, index) {
-                  return FlDotCirclePainter(
-                    radius: 3.5,
-                    color: lineColor,
-                    strokeWidth: 2,
-                    strokeColor: Colors.white,
-                  );
-                },
-              ),
-              belowBarData: BarAreaData(
-                show: true,
-                color: lineColor.withOpacity(0.12),
-              ),
-            ),
-          ],
+          // Animation is supported here.
+          duration: const Duration(milliseconds: 850),
+          curve: Curves.easeOutCubic,
         ),
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
       ),
     );
   }
 
-  String getLabel(int index) {
-    if (labels == null || index < 0 || index >= labels!.length) {
-      return 'Screening ${index + 1}';
+  double getMinY(List<double> data) {
+    final minValue = data.reduce((a, b) => a < b ? a : b);
+    final maxValue = data.reduce((a, b) => a > b ? a : b);
+    final range = maxValue - minValue;
+
+    if (range == 0) {
+      return minValue - 1;
     }
 
-    return labels![index];
+    return minValue - (range * 0.18);
   }
 
-  double getHorizontalInterval(double minValue, double maxValue) {
-    final range = (maxValue - minValue).abs();
+  double getMaxY(List<double> data) {
+    final minValue = data.reduce((a, b) => a < b ? a : b);
+    final maxValue = data.reduce((a, b) => a > b ? a : b);
+    final range = maxValue - minValue;
 
-    if (range <= 5) return 1;
-    if (range <= 20) return 5;
-    if (range <= 50) return 10;
+    if (range == 0) {
+      return maxValue + 1;
+    }
 
-    return 25;
+    return maxValue + (range * 0.18);
   }
 
-  String formatNumber(double value) {
+  double getInterval(double minY, double maxY) {
+    final range = maxY - minY;
+
+    if (range <= 0) return 1;
+
+    return range / 3;
+  }
+
+  String formatValue(double value) {
     if (value % 1 == 0) {
-      return value.toStringAsFixed(0);
+      return value.toInt().toString();
     }
 
     return value.toStringAsFixed(1);
+  }
+
+  String shortLabel(String label) {
+    if (label.length <= 5) return label;
+
+    // Example: 2026-05-22 -> 05/22
+    if (label.length >= 10 && label.contains('-')) {
+      final parts = label.split('-');
+      if (parts.length >= 3) {
+        return '${parts[1]}/${parts[2]}';
+      }
+    }
+
+    return label.substring(0, 5);
+  }
+
+  String getTooltipLabel(int index) {
+    if (labels == null || index < 0 || index >= labels!.length) {
+      return 'Data ${index + 1}';
+    }
+
+    return labels![index];
   }
 }

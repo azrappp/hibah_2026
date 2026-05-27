@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:hibah_2026/api_response.dart';
+import 'package:hibah_2026/config/app_config.dart';
 import 'package:hibah_2026/flow_delegate.dart';
 import 'package:hibah_2026/main.dart';
 
@@ -31,9 +32,7 @@ class MedicineStepFlowDelegate extends ChangeNotifier
       notifyListeners();
 
       final response = await http.post(
-        Uri.parse(
-          'http://10.0.2.2:3000/api/screening/${flowData.screeningId}/medication',
-        ),
+        AppConfig.apiUri('/api/screening/${flowData.screeningId}/medication'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           "hypertensionDrugName": hyDrugController.text,

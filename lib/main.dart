@@ -23,9 +23,11 @@ import 'package:hibah_2026/pages/nutrition_status/nutrition_status_page.dart';
 import 'package:hibah_2026/pages/home_page.dart';
 import 'package:provider/provider.dart';
 import 'package:hibah_2026/app_session.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load();
 
   final appSession = AppSession();
   await appSession.loadSession();

@@ -14,50 +14,68 @@ class ClinicalDataStepPage extends StatefulWidget {
 class _ClinicalDataStepPageState extends State<ClinicalDataStepPage> {
   final formKey = GlobalKey<FormState>();
 
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
+    return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
       child: Column(
-        spacing: 16.0,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          FormHeader(title: 'Data Klinis'),
+          const FormHeader(
+            title: 'Data Klinis',
+            subtitle: "Masukkan tekanan darah untuk menilai risiko hipertensi",
+          ),
+
+          const SizedBox(height: 8),
+
           Form(
+            key: formKey,
             child: Column(
-              spacing: 32.0,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 16.0,
+                Text(
+                  'Tekanan Darah',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: textDark,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                Row(
                   children: <Widget>[
-                    Text(
-                      'Tekanan Darah',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    Expanded(
+                      child: TextFormField(
+                        controller: widget.delegate.systolicController,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                        decoration: cleanInputDecoration(
+                          label: 'Sistol',
+                          hint: '120',
+                          suffix: 'mmHg',
+                        ),
                       ),
                     ),
-                    Row(
-                      spacing: 16.0,
-                      children: <Widget>[
-                        Expanded(
-                          child: TextFormField(
-                            decoration: InputDecoration(
-                              labelText: 'Sistol',
-                              hintText: '120',
-                            ),
-                            controller: widget.delegate.systolicController,
-                          ),
+
+                    const SizedBox(width: 14),
+
+                    Expanded(
+                      child: TextFormField(
+                        controller: widget.delegate.diastolycController,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        decoration: cleanInputDecoration(
+                          label: 'Diastol',
+                          hint: '80',
+                          suffix: 'mmHg',
                         ),
-                        Expanded(
-                          child: TextFormField(
-                            decoration: InputDecoration(
-                              labelText: 'Diastol',
-                              hintText: '80',
-                            ),
-                            controller: widget.delegate.diastolycController,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -65,6 +83,41 @@ class _ClinicalDataStepPageState extends State<ClinicalDataStepPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  InputDecoration cleanInputDecoration({
+    required String label,
+    required String hint,
+    required String suffix,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      suffixText: suffix,
+      filled: true,
+      fillColor: Colors.white,
+      labelStyle: const TextStyle(
+        color: textMedium,
+        fontWeight: FontWeight.w600,
+      ),
+      hintStyle: TextStyle(
+        color: Colors.grey.shade400,
+        fontWeight: FontWeight.w500,
+      ),
+      suffixStyle: const TextStyle(
+        color: healthGreen,
+        fontWeight: FontWeight.w800,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: Color(0xFFE8E8E8), width: 1.2),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: healthGreen, width: 1.6),
       ),
     );
   }

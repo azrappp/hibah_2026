@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:hibah_2026/api_response.dart';
+import 'package:hibah_2026/config/app_config.dart';
 import 'package:hibah_2026/flow_delegate.dart';
 import 'package:hibah_2026/main.dart';
 
@@ -33,8 +34,8 @@ class EnergyNeedsStatusFlowDelegate extends ChangeNotifier
       notifyListeners();
 
       final response = await http.get(
-        Uri.parse(
-          'http://10.0.2.2:3000/api/screening/${flowData.screeningId}/energy-requirement',
+        AppConfig.apiUri(
+          '/api/screening/${flowData.screeningId}/energy-requirement',
         ),
         headers: {'Accept': 'application/json'},
       );

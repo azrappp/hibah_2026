@@ -1,6 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:hibah_2026/widgets/screening_progress_card.dart';
 import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hibah_2026/config/app_config.dart';
+import 'package:hibah_2026/widgets/screening_progress_card.dart';
 import 'package:hibah_2026/main.dart';
 import 'package:hibah_2026/models/client_screening_history.dart';
 import 'package:hibah_2026/pages/screening_page.dart';
@@ -18,13 +21,15 @@ class ScreeningMonitoringPage extends StatefulWidget {
 }
 
 class _ScreeningMonitoringPageState extends State<ScreeningMonitoringPage> {
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
-
   bool isLoading = false;
   bool isStartingScreening = false;
   String? errorMessage;
 
   ClientScreeningHistory? screeningHistory;
+
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color background = Color(0xFFF7F7F7);
+  static const Color textDark = Color(0xFF25262A);
 
   @override
   void initState() {
@@ -40,25 +45,33 @@ class _ScreeningMonitoringPageState extends State<ScreeningMonitoringPage> {
       });
 
       final response = await http.get(
-        Uri.parse('$baseUrl/clients/${widget.clientId}/screening-history'),
+        AppConfig.apiUri('/api/clients/${widget.clientId}/screening-history'),
       );
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
+
         setState(() {
           screeningHistory = ClientScreeningHistory.fromJson(body['data']);
         });
+
         return;
       }
 
       setState(() {
-        errorMessage = 'Failed to load screening history';
+        errorMessage = 'Gagal memuat riwayat screening.';
       });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
-        errorMessage = 'Error: $e';
+        errorMessage = 'Tidak dapat terhubung ke server.';
       });
     } finally {
+      if (!mounted) return;
+
       setState(() {
         isLoading = false;
       });
@@ -73,13 +86,15 @@ class _ScreeningMonitoringPageState extends State<ScreeningMonitoringPage> {
       });
 
       final response = await http.post(
-        Uri.parse('$baseUrl/screening/${widget.clientId}/new-screening'),
+        AppConfig.apiUri('/api/screening/${widget.clientId}/new-screening'),
         headers: {'Content-Type': 'application/json'},
       );
 
+      if (!mounted) return;
+
       if (response.statusCode != 201) {
         setState(() {
-          errorMessage = 'Failed to create new screening';
+          errorMessage = 'Gagal membuat screening baru.';
         });
         return;
       }
@@ -98,17 +113,21 @@ class _ScreeningMonitoringPageState extends State<ScreeningMonitoringPage> {
               screeningId: screeningId,
               isRepeatScreening: true,
             ),
-            child: ScreeningPage(),
+            child: const ScreeningPage(),
           ),
         ),
       );
 
       await fetchScreeningHistory();
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
-        errorMessage = 'Error: $e';
+        errorMessage = 'Tidak dapat terhubung ke server.';
       });
     } finally {
+      if (!mounted) return;
+
       setState(() {
         isStartingScreening = false;
       });
@@ -120,56 +139,61 @@ class _ScreeningMonitoringPageState extends State<ScreeningMonitoringPage> {
     final history = screeningHistory;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: background,
       appBar: AppBar(
         title: const Text(
           'Monitoring Kesehatan',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF202124),
-          ),
+          style: TextStyle(fontWeight: FontWeight.w900, color: textDark),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: background,
+        surfaceTintColor: background,
         elevation: 0,
-        foregroundColor: const Color(0xFF202124),
+        foregroundColor: textDark,
       ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: fetchScreeningHistory,
+          color: healthGreen,
           child: ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             children: [
               if (isLoading)
                 const Padding(
                   padding: EdgeInsets.all(40),
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(
+                    child: CircularProgressIndicator(color: healthGreen),
+                  ),
                 )
               else if (history == null)
                 const EmptyScreeningCard()
               else ...[
                 ClientHeaderCard(history: history),
-                const SizedBox(height: 16),
+
+                const SizedBox(height: 18),
 
                 SizedBox(
                   width: double.infinity,
-                  height: 48,
+                  height: 54,
                   child: FilledButton.icon(
                     onPressed: isStartingScreening ? null : startNewScreening,
-                    icon: isStartingScreening
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.add_chart_rounded),
                     label: Text(
                       isStartingScreening
                           ? 'Membuat Screening...'
                           : 'Screening Ulang',
                     ),
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF5E4AA0),
+                      backgroundColor: healthGreen,
+                      disabledBackgroundColor: healthGreen.withValues(
+                        alpha: 0.35,
+                      ),
                       foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                 ),
@@ -181,36 +205,45 @@ class _ScreeningMonitoringPageState extends State<ScreeningMonitoringPage> {
                   const SizedBox(height: 16),
                 ],
 
+                Text(
+                  'Perkembangan Screening',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: textDark,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
                 ScreeningProgressCard(
                   title: 'Antropometri',
                   currentValue: getLastBmi(history),
                   unit: 'IMT',
-                  status: 'Progress BMI dan berat badan',
+                  status: 'Perkembangan IMT dan berat badan',
                   values: getBmiValues(history),
                   labels: getDateLabels(history),
-                  icon: Icons.monitor_weight_rounded,
                 ),
+
                 const SizedBox(height: 14),
 
                 ScreeningProgressCard(
                   title: 'Gula Darah',
                   currentValue: getLastGlucose(history),
                   unit: 'mg/dL',
-                  status: 'Progress gula darah',
+                  status: 'Perkembangan kadar gula darah',
                   values: getGlucoseValues(history),
                   labels: getDateLabels(history),
-                  icon: Icons.bloodtype_rounded,
                 ),
+
                 const SizedBox(height: 14),
 
                 ScreeningProgressCard(
                   title: 'Tekanan Darah',
                   currentValue: getLastBloodPressure(history),
                   unit: 'mmHg',
-                  status: 'Progress tekanan darah',
+                  status: 'Perkembangan tekanan darah',
                   values: getSystolicValues(history),
                   labels: getDateLabels(history),
-                  icon: Icons.favorite_rounded,
                 ),
               ],
             ],
@@ -278,70 +311,89 @@ class ClientHeaderCard extends StatelessWidget {
 
   final ClientScreeningHistory history;
 
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+  static const Color borderSoft = Color(0xFFE8E8E8);
+
   @override
   Widget build(BuildContext context) {
     final client = history.client;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0EAF5),
-        borderRadius: BorderRadius.circular(18),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: borderSoft, width: 1.1),
       ),
       child: Row(
         children: [
-          const CircleAvatar(
-            radius: 26,
-            backgroundColor: Colors.white,
-            child: Icon(
-              Icons.person_rounded,
-              color: Color(0xFF5E4AA0),
-              size: 30,
-            ),
-          ),
+          GenderAvatar(gender: client.gender),
+
           const SizedBox(width: 14),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   client.fullName,
-                  style: const TextStyle(
-                    color: Color(0xFF202124),
-                    fontSize: 18,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: textDark,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 4),
+
+                const SizedBox(height: 5),
+
                 Text(
                   '${client.age} tahun • ${client.gender}',
-                  style: TextStyle(
-                    color: Colors.grey.shade700,
-                    fontWeight: FontWeight.w600,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: textMedium,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
             ),
           ),
-          Column(
-            children: [
-              Text(
-                history.totalScreenings.toString(),
-                style: const TextStyle(
-                  color: Color(0xFF5E4AA0),
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
+
+          const SizedBox(width: 12),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: healthGreenSoft,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  history.totalScreenings.toString(),
+                  style: const TextStyle(
+                    color: healthGreen,
+                    fontSize: 20,
+                    height: 1,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'GeistMono',
+                  ),
                 ),
-              ),
-              const Text(
-                'Screening',
-                style: TextStyle(
-                  color: Color(0xFF5E4AA0),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
+
+                const SizedBox(height: 4),
+
+                const Text(
+                  'Screening',
+                  style: TextStyle(
+                    color: healthGreen,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -349,12 +401,92 @@ class ClientHeaderCard extends StatelessWidget {
   }
 }
 
-class EmptyScreeningCard extends StatelessWidget {
-  const EmptyScreeningCard({super.key});
+class GenderAvatar extends StatelessWidget {
+  const GenderAvatar({super.key, required this.gender});
+
+  final String? gender;
+
+  String get assetPath {
+    final normalized = gender?.toLowerCase().trim() ?? '';
+
+    if (normalized == 'perempuan' ||
+        normalized == 'female' ||
+        normalized == 'wanita') {
+      return 'assets/icons/female.svg';
+    }
+
+    return 'assets/icons/male.svg';
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Belum ada data screening'));
+    return SizedBox(
+      width: 50,
+      height: 50,
+      child: SvgPicture.asset(assetPath, fit: BoxFit.cover),
+    );
+  }
+}
+
+class EmptyScreeningCard extends StatelessWidget {
+  const EmptyScreeningCard({super.key});
+
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+  static const Color borderSoft = Color(0xFFE8E8E8);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(22, 28, 22, 28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: borderSoft, width: 1.1),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: const BoxDecoration(
+              color: healthGreenSoft,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.health_and_safety_rounded,
+              color: healthGreen,
+              size: 28,
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          Text(
+            'Belum ada data screening',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: textDark,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          Text(
+            'Mulai screening untuk memantau perkembangan kesehatan Anda.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: textMedium,
+              fontWeight: FontWeight.w500,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -363,21 +495,29 @@ class ErrorCard extends StatelessWidget {
 
   final String message;
 
+  static const Color errorSoft = Color(0xFFFFECEC);
+  static const Color error = Color(0xFFD84A4A);
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.red.shade50,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.red.shade100),
+        color: errorSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: error.withValues(alpha: 0.18)),
       ),
-      child: Text(
-        message,
-        style: TextStyle(
-          color: Colors.red.shade700,
-          fontWeight: FontWeight.w600,
-        ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline_rounded, color: error, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: error, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
       ),
     );
   }

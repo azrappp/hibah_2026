@@ -12,6 +12,12 @@ class NutritionStatusPage extends StatefulWidget {
 }
 
 class _NutritionStatusPageState extends State<NutritionStatusPage> {
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+  static const Color borderSoft = Color(0xFFE8E8E8);
+
   @override
   void initState() {
     super.initState();
@@ -24,94 +30,131 @@ class _NutritionStatusPageState extends State<NutritionStatusPage> {
       listenable: widget.delegate,
       builder: (context, _) {
         if (widget.delegate.isLoading) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(color: healthGreen),
+          );
         }
 
         final response = widget.delegate.apiResponse;
+        final data = response?.data?['data'];
 
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
+        final bmi = formatValue(data?['bmi']);
+        final bmiStatus = data?['bmiStatus']?.toString() ?? '-';
+        final height = formatValue(data?['heightCm']);
+        final weight = formatValue(data?['weightKg']);
+        final waist = formatValue(data?['waistCircumferenceCm']);
+
+        return SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
           child: Column(
-            spacing: 16.0,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              FormHeader(title: 'Status Gizi'),
+              const FormHeader(
+                title: 'Status Gizi',
+                subtitle:
+                    'Hasil perhitungan IMT digunakan untuk memantau kondisi gizi tubuh Anda.',
+              ),
+
+              const SizedBox(height: 24),
+
               Container(
-                height: 398.0,
                 width: double.infinity,
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 26),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(12.0),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: borderSoft, width: 1.1),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
+                    const SizedBox(height: 18),
+
                     Text(
                       'IMT',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w600,
+                        color: textMedium,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                    Spacer(),
+
+                    const SizedBox(height: 10),
+
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        bmi,
+                        style: const TextStyle(
+                          color: textDark,
+                          fontFamily: 'GeistMono',
+                          fontSize: 72.0,
+                          height: 1,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -2.0,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: healthGreenSoft,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        bmiStatus,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: healthGreen,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
                     Text(
-                      '${response?.data?['data']['bmi']}',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontFamily: 'GeistMono',
-                        fontSize: 86.0,
-                        fontWeight: FontWeight.w700,
+                      getBmiMessage(bmiStatus),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: textMedium,
+                        fontWeight: FontWeight.w500,
+                        height: 1.45,
                       ),
-                    ),
-                    Spacer(),
-                    Column(
-                      spacing: 8.0,
-                      children: [
-                        Text(
-                          '${response?.data?['data']['bmiStatus']}',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                        Text(
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi.',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
               ),
+
+              const SizedBox(height: 18),
+
               Row(
-                spacing: 16.0,
                 children: [
                   Expanded(
                     child: SummaryCard(
-                      label: 'Tinggi Badan',
-                      value: '${response?.data?['data']['heightCm']}',
+                      label: 'Tinggi\nBadan', // Added \n to force a line break
+                      value: height,
                       unit: 'cm',
                     ),
                   ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: SummaryCard(
-                      label: 'Berat Badan',
-                      value: '${response?.data?['data']['weightKg']}',
-                      unit: 'Kg',
+                      label: 'Berat\nBadan', // Added \n
+                      value: weight,
+                      unit: 'kg',
                     ),
                   ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: SummaryCard(
-                      label: 'Lingkar Perut',
-                      value:
-                          '${response?.data?['data']['waistCircumferenceCm']}',
+                      label: 'Lingkar\nPerut', // Added \n
+                      value: waist,
                       unit: 'cm',
                     ),
                   ),
@@ -122,6 +165,41 @@ class _NutritionStatusPageState extends State<NutritionStatusPage> {
         );
       },
     );
+  }
+
+  String formatValue(dynamic value) {
+    if (value == null) return '-';
+
+    final number = double.tryParse(value.toString());
+    if (number == null) return value.toString();
+
+    if (number % 1 == 0) {
+      return number.toInt().toString();
+    }
+
+    return number.toStringAsFixed(1);
+  }
+
+  String getBmiMessage(String status) {
+    final normalized = status.toLowerCase();
+
+    if (normalized.contains('normal')) {
+      return 'Status gizi berada dalam rentang normal.';
+    }
+
+    if (normalized.contains('underweight') || normalized.contains('kurang')) {
+      return 'Berat badan berada di bawah rentang ideal dan perlu diperhatikan.';
+    }
+
+    if (normalized.contains('overweight')) {
+      return 'Berat badan berada di atas rentang ideal dan perlu dikendalikan.';
+    }
+
+    if (normalized.contains('obese') || normalized.contains('obesitas')) {
+      return 'Berat badan cukup tinggi dan perlu pemantauan pola makan serta aktivitas.';
+    }
+
+    return 'Pantau status gizi secara berkala untuk menjaga kesehatan tubuh.';
   }
 }
 
@@ -137,30 +215,51 @@ class SummaryCard extends StatelessWidget {
   final String value;
   final String unit;
 
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+  static const Color borderSoft = Color(0xFFE8E8E8);
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12.0),
+      constraints: const BoxConstraints(minHeight: 118),
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12.0),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: borderSoft, width: 1.1),
       ),
       child: Column(
-        spacing: 24.0,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          const SizedBox(height: 12),
+
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: textMedium,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
             ),
           ),
-          Text(
-            '$value $unit',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontFamily: 'GeistMono',
-              fontWeight: FontWeight.w600,
-              letterSpacing: -1.5,
+
+          const SizedBox(height: 8),
+
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '$value $unit',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: textDark,
+                fontFamily: 'GeistMono',
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1.0,
+              ),
             ),
           ),
         ],

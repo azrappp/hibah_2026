@@ -14,6 +14,10 @@ class BloodSugarStatusPage extends StatefulWidget {
 }
 
 class _BloodSugarStatusPageState extends State<BloodSugarStatusPage> {
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+
   @override
   void initState() {
     super.initState();
@@ -26,94 +30,119 @@ class _BloodSugarStatusPageState extends State<BloodSugarStatusPage> {
       listenable: widget.delegate,
       builder: (context, _) {
         if (widget.delegate.isLoading) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(color: healthGreen),
+          );
         }
 
         final response = widget.delegate.apiResponse;
+        final data = response?.data?['data'];
 
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
+        final glucoseStatus = data?['glucoseStatus']?.toString() ?? '-';
+        final fastingGlucose = formatValue(data?['fastingGlucoseMgDl']);
+        final postprandialGlucose = formatValue(
+          data?['postprandialGlucoseMgDl'],
+        );
+        final randomGlucose = formatValue(data?['randomGlucoseMgDl']);
+        final hba1c = formatValue(data?['hba1cPercent']);
+
+        return SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
           child: Column(
-            spacing: 16.0,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              FormHeader(title: 'Status Gula Darah'),
+              const FormHeader(
+                title: 'Status Gula Darah',
+                subtitle:
+                    "Hasil pemeriksaan gula darah digunakan untuk menilai risiko diabetes.",
+              ),
+
+              const SizedBox(height: 8),
+
+              const SizedBox(height: 24),
+
               CardWidget(
-                padding: 24.0,
-                color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                padding: 22.0,
+                color: Colors.white,
                 child: Column(
-                  spacing: 48.0,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      'Diagnosa',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Column(
-                      spacing: 8.0,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
+                    Row(
+                      children: [
                         Text(
-                          '${response?.data?['data']['glucoseStatus']}',
-                          style: Theme.of(context).textTheme.titleMedium
+                          'Diagnosis',
+                          style: Theme.of(context).textTheme.labelLarge
                               ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                        ),
-                        Text(
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi.',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                                color: textDark,
+                                fontWeight: FontWeight.w800,
                               ),
                         ),
                       ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    Text(
+                      glucoseStatus,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: healthGreen,
+                            letterSpacing: -0.4,
+                          ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Text(
+                      getGlucoseMessage(glucoseStatus),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: textMedium,
+                        fontWeight: FontWeight.w500,
+                        height: 1.45,
+                      ),
                     ),
                   ],
                 ),
               ),
 
+              const SizedBox(height: 18),
+
               Row(
-                spacing: 16.0,
                 children: <Widget>[
                   Expanded(
                     child: SummaryCard(
                       label: 'FPG',
-                      value: '${response?.data?['data']['fastingGlucoseMgDl']}',
+                      value: fastingGlucose,
                       unit: 'mg/dL',
                     ),
                   ),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: SummaryCard(
                       label: '2-h PG',
-                      value:
-                          '${response?.data?['data']['postprandialGlucoseMgDl']}',
+                      value: postprandialGlucose,
                       unit: 'mg/dL',
                     ),
                   ),
                 ],
               ),
+
+              const SizedBox(height: 14),
+
               Row(
-                spacing: 16.0,
                 children: <Widget>[
                   Expanded(
                     child: SummaryCard(
                       label: 'Random PG',
-                      value: '${response?.data?['data']['randomGlucoseMgDl']}',
+                      value: randomGlucose,
                       unit: 'mg/dL',
                     ),
                   ),
+                  const SizedBox(width: 14),
                   Expanded(
-                    child: SummaryCard(
-                      label: 'A1C',
-                      value: '${response?.data?['data']['hba1cPercent']}',
-                      unit: '%',
-                    ),
+                    child: SummaryCard(label: 'A1C', value: hba1c, unit: '%'),
                   ),
                 ],
               ),
@@ -122,5 +151,28 @@ class _BloodSugarStatusPageState extends State<BloodSugarStatusPage> {
         );
       },
     );
+  }
+
+  String formatValue(dynamic value) {
+    if (value == null) return '-';
+    return value.toString();
+  }
+
+  String getGlucoseMessage(String status) {
+    final normalized = status.toLowerCase();
+
+    if (normalized.contains('normal')) {
+      return 'Kadar gula darah masih dalam rentang normal.';
+    }
+
+    if (normalized.contains('prediabetes')) {
+      return 'Kadar gula darah mulai meningkat dan perlu dipantau.';
+    }
+
+    if (normalized.contains('diabetes')) {
+      return 'Kadar gula darah tinggi dan perlu tindak lanjut kesehatan.';
+    }
+
+    return 'Pantau hasil gula darah secara berkala untuk menjaga kesehatan.';
   }
 }

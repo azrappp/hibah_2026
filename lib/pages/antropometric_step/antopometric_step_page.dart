@@ -14,47 +14,118 @@ class AntopometricStepPage extends StatefulWidget {
 class AntopometricStepPageState extends State<AntopometricStepPage> {
   final formKey = GlobalKey<FormState>();
 
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
+    return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
       child: Column(
-        spacing: 16.0,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          FormHeader(title: 'Antopometri'),
+          const FormHeader(
+            title: 'Antropometri',
+            subtitle:
+                "Masukkan data tubuh Anda untuk menghitung status gizi dan kebutuhan energi harian.",
+          ),
+
+          const SizedBox(height: 8),
+
           Form(
             key: formKey,
             child: Column(
-              spacing: 32.0,
               children: <Widget>[
                 TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Berat Badan',
-                    hintText: '50',
-                    helperText: 'Berat badan dalam satuan Kg',
-                  ),
                   controller: widget.delegate.weightController,
-                ),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Tinggi Badan',
-                    hintText: '169',
-                    helperText: 'Tinggi badan dalam satuan cm',
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  decoration: cleanInputDecoration(
+                    context: context,
+                    label: 'Berat Badan',
+                    hint: 'Contoh: 68',
+                    helper: 'Dalam satuan kilogram (kg)',
+                    suffix: 'kg',
                   ),
+                ),
+
+                const SizedBox(height: 22),
+
+                TextFormField(
                   controller: widget.delegate.heightController,
-                ),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Lingkar Perut',
-                    hintText: '58',
-                    helperText: 'Lingkar perut dalam satuan cm',
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  decoration: cleanInputDecoration(
+                    context: context,
+                    label: 'Tinggi Badan',
+                    hint: 'Contoh: 160',
+                    helper: 'Dalam satuan sentimeter (cm)',
+                    suffix: 'cm',
                   ),
+                ),
+
+                const SizedBox(height: 22),
+
+                TextFormField(
                   controller: widget.delegate.waistController,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  decoration: cleanInputDecoration(
+                    context: context,
+                    label: 'Lingkar Perut',
+                    hint: 'Contoh: 84',
+                    helper: 'Dalam satuan sentimeter (cm)',
+                    suffix: 'cm',
+                  ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  InputDecoration cleanInputDecoration({
+    required BuildContext context,
+    required String label,
+    required String hint,
+    required String helper,
+    required String suffix,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      helperText: helper,
+      suffixText: suffix,
+      filled: true,
+      fillColor: Colors.white,
+      labelStyle: const TextStyle(
+        color: textMedium,
+        fontWeight: FontWeight.w600,
+      ),
+      hintStyle: TextStyle(
+        color: Colors.grey.shade400,
+        fontWeight: FontWeight.w500,
+      ),
+      helperStyle: TextStyle(
+        color: Colors.grey.shade500,
+        fontWeight: FontWeight.w500,
+      ),
+      suffixStyle: const TextStyle(
+        color: healthGreen,
+        fontWeight: FontWeight.w800,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: Color(0xFFE8E8E8), width: 1.2),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: healthGreen, width: 1.6),
       ),
     );
   }

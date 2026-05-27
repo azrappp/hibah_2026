@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:hibah_2026/api_response.dart';
+import 'package:hibah_2026/config/app_config.dart';
 import 'package:hibah_2026/flow_delegate.dart';
 import 'package:hibah_2026/main.dart';
 import 'package:hibah_2026/widgets/gender_radio_group_widget.dart';
@@ -62,7 +63,7 @@ class IdentityStepFlowDelegate extends ChangeNotifier
       debugPrint('Identity Payload: ${jsonEncode(payload)}');
 
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:3000/api/screening/identity'),
+        AppConfig.apiUri('/api/screening/identity'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
       );

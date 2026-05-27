@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:hibah_2026/api_response.dart';
+import 'package:hibah_2026/config/app_config.dart';
 import 'package:hibah_2026/flow_delegate.dart';
 import 'package:hibah_2026/main.dart';
 
@@ -33,9 +34,7 @@ class BloodSugarStepFlowDelegate extends ChangeNotifier
       notifyListeners();
 
       final response = await http.post(
-        Uri.parse(
-          'http://10.0.2.2:3000/api/screening/${flowData.screeningId}/biochemical',
-        ),
+        AppConfig.apiUri('/api/screening/${flowData.screeningId}/biochemical'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           "fastingGlucoseMgDl": fpgController.text,

@@ -17,6 +17,10 @@ class EnergyNeedsPage extends StatefulWidget {
 }
 
 class _EnergyNeedsPageState extends State<EnergyNeedsPage> {
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+
   @override
   void initState() {
     super.initState();
@@ -29,86 +33,132 @@ class _EnergyNeedsPageState extends State<EnergyNeedsPage> {
       listenable: widget.delegate,
       builder: (context, _) {
         if (widget.delegate.isLoading) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(color: healthGreen),
+          );
         }
 
         final response = widget.delegate.apiResponse;
+        final data = response?.data?['data'];
+
+        final dailyEnergy = formatValue(data?['dailyEnergyKcal']);
+        final carbohydrate = formatValue(data?['carbohydrateGram']);
+        final fat = formatValue(data?['fatGram']);
+        final protein = formatValue(data?['proteinGram']);
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
           child: Column(
-            spacing: 16.0,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              FormHeader(title: 'Kebutuhan Energi'),
+              const FormHeader(
+                title: 'Kebutuhan Energi',
+                subtitle:
+                    'Estimasi kebutuhan energi harian berdasarkan data screening Anda.',
+              ),
+
+              const SizedBox(height: 24),
 
               CardWidget(
                 width: double.infinity,
-                height: 398.0,
-                color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                color: Colors.white,
                 padding: 24.0,
                 child: Column(
                   children: <Widget>[
                     Text(
                       'Kalori Harian',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w600,
+                        color: textMedium,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const Spacer(),
-                    Text(
-                      '${response?.data?['data']['dailyEnergyKcal'] ?? '-'}',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontFamily: 'GeistMono',
-                        fontSize: 86.0,
-                        fontWeight: FontWeight.w700,
+
+                    const SizedBox(height: 12),
+
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        dailyEnergy,
+                        style: const TextStyle(
+                          color: healthGreen,
+                          fontFamily: 'GeistMono',
+                          fontSize: 72.0,
+                          height: 1,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -2.0,
+                        ),
                       ),
                     ),
-                    const Spacer(),
+
+                    const SizedBox(height: 6),
+
                     Text(
-                      'Kebutuhan energi harian dihitung berdasarkan data screening dan aktivitas fisik.',
+                      'kkal / hari',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: textDark,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    Text(
+                      'Angka ini menjadi acuan untuk menyusun rekomendasi menu harian.',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: textMedium,
+                        fontWeight: FontWeight.w500,
+                        height: 1.45,
                       ),
                     ),
                   ],
                 ),
               ),
 
+              const SizedBox(height: 18),
+
               Row(
-                spacing: 16.0,
                 children: <Widget>[
                   Expanded(
                     child: SummaryCard(
                       label: 'Karbohidrat',
-                      value:
-                          '${response?.data?['data']['carbohydrateGram'] ?? '-'}',
+                      value: carbohydrate,
                       unit: 'g',
                     ),
                   ),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: SummaryCard(
-                      label: 'Lemak',
-                      value: '${response?.data?['data']['fatGram'] ?? '-'}',
-                      unit: 'g',
-                    ),
+                    child: SummaryCard(label: 'Lemak', value: fat, unit: 'g'),
                   ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: SummaryCard(
                       label: 'Protein',
-                      value: '${response?.data?['data']['proteinGram'] ?? '-'}',
+                      value: protein,
                       unit: 'g',
                     ),
                   ),
                 ],
               ),
 
+              const SizedBox(height: 24),
+
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 54,
                 child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: healthGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                   onPressed: () {
                     final flowData = widget.delegate.flowData;
 
@@ -131,8 +181,7 @@ class _EnergyNeedsPageState extends State<EnergyNeedsPage> {
                       (route) => false,
                     );
                   },
-                  icon: const Icon(Icons.home_rounded),
-                  label: const Text('Selesai dan Kembali ke Home'),
+                  label: const Text('Selesai'),
                 ),
               ),
             ],
@@ -140,5 +189,18 @@ class _EnergyNeedsPageState extends State<EnergyNeedsPage> {
         );
       },
     );
+  }
+
+  String formatValue(dynamic value) {
+    if (value == null) return '-';
+
+    final number = double.tryParse(value.toString());
+    if (number == null) return value.toString();
+
+    if (number % 1 == 0) {
+      return number.toInt().toString();
+    }
+
+    return number.toStringAsFixed(1);
   }
 }

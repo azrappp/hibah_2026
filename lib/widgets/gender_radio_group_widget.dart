@@ -12,40 +12,62 @@ class GenderRadioGroupWidget extends StatelessWidget {
   final Gender? value;
   final ValueChanged<Gender?> onChanged;
 
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+
   @override
   Widget build(BuildContext context) {
-    return RadioGroup<Gender>(
-      groupValue: value,
-      onChanged: onChanged,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 16.0),
-            child: Text(
-              'Jenis Kelamin',
-              style: Theme.of(context).textTheme.bodySmall,
+    return Theme(
+      data: Theme.of(context).copyWith(
+        radioTheme: RadioThemeData(
+          fillColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return textDark;
+            }
+            return textMedium;
+          }),
+        ),
+      ),
+      // 1. Add RadioGroup ancestor to manage the shared state
+      child: RadioGroup<Gender>(
+        groupValue: value,
+        onChanged: onChanged,
+        child: Row(
+          children: [
+            Expanded(
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text(
+                  'Laki-laki',
+                  style: TextStyle(
+                    color: textDark,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+                // 2. Remove groupValue and onChanged here
+                leading: const Radio<Gender>(value: Gender.male),
+                onTap: () => onChanged(Gender.male),
+              ),
             ),
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text('Laki-laki'),
-                  leading: Radio<Gender>(value: Gender.male),
+            Expanded(
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text(
+                  'Perempuan',
+                  style: TextStyle(
+                    color: textDark,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
                 ),
+                leading: const Radio<Gender>(value: Gender.female),
+                onTap: () => onChanged(Gender.female),
               ),
-              Expanded(
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text('Perempuan'),
-                  leading: Radio<Gender>(value: Gender.female),
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }

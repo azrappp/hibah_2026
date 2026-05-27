@@ -1,5 +1,8 @@
-import 'package:flutter/material.dart';
 import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:hibah_2026/config/app_config.dart';
+import 'package:hibah_2026/widgets/gender_radio_group_widget.dart';
 import 'package:http/http.dart' as http;
 
 class MealRecommendationPage extends StatefulWidget {
@@ -17,12 +20,11 @@ class MealRecommendationPage extends StatefulWidget {
 }
 
 class _MealRecommendationPageState extends State<MealRecommendationPage> {
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
-
-  static const Color primaryPurple = Color(0xFF5E4AA0);
-  static const Color cardPurple = Color(0xFFF0EAF5);
-  static const Color softPurple = Color(0xFFF8F5FB);
-  static const Color textDark = Color(0xFF202124);
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color background = Color(0xFFF7F7F7);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
 
   DateTime selectedDate = DateTime.now();
 
@@ -54,11 +56,13 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
         dailyMenu = null;
       });
 
-      final uri = Uri.parse(
-        '$baseUrl/meal/clients/${widget.clientId}/menu-by-date?date=$selectedDateString',
+      final uri = AppConfig.apiUri(
+        '/api/meal/clients/${widget.clientId}/menu-by-date?date=$selectedDateString',
       );
 
       final response = await http.get(uri);
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
@@ -80,13 +84,17 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
       }
 
       setState(() {
-        errorMessage = 'Failed to load menu: ${response.statusCode}';
+        errorMessage = 'Gagal memuat menu harian.';
       });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
-        errorMessage = 'Error: $e';
+        errorMessage = 'Tidak dapat terhubung ke server.';
       });
     } finally {
+      if (!mounted) return;
+
       setState(() {
         isLoading = false;
       });
@@ -100,7 +108,9 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
         errorMessage = null;
       });
 
-      final uri = Uri.parse('$baseUrl/meal/${widget.screeningId}/menu-weekly');
+      final uri = AppConfig.apiUri(
+        '/api/meal/${widget.screeningId}/menu-weekly',
+      );
 
       final response = await http.post(
         uri,
@@ -108,26 +118,32 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
         body: jsonEncode({'startDate': selectedDateString}),
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 201) {
         await fetchMenuByDate();
 
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Weekly menu generated successfully')),
+          const SnackBar(content: Text('Menu mingguan berhasil dibuat.')),
         );
 
         return;
       }
 
       setState(() {
-        errorMessage = 'Failed to generate menu: ${response.body}';
+        errorMessage = 'Gagal membuat rekomendasi menu.';
       });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
-        errorMessage = 'Error: $e';
+        errorMessage = 'Tidak dapat terhubung ke server.';
       });
     } finally {
+      if (!mounted) return;
+
       setState(() {
         isGenerating = false;
       });
@@ -142,7 +158,7 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
     });
 
     try {
-      final uri = Uri.parse('$baseUrl/meal/items/${item.menuItemId}/eaten');
+      final uri = AppConfig.apiUri('/api/meal/items/${item.menuItemId}/eaten');
 
       final response = await http.patch(
         uri,
@@ -150,15 +166,27 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
         body: jsonEncode({'isEaten': item.isEaten}),
       );
 
+      if (!mounted) return;
+
       if (response.statusCode != 200) {
         setState(() {
           item.isEaten = previousValue;
         });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal memperbarui status makanan.')),
+        );
       }
     } catch (_) {
+      if (!mounted) return;
+
       setState(() {
         item.isEaten = previousValue;
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak dapat terhubung ke server.')),
+      );
     }
   }
 
@@ -168,6 +196,17 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
       initialDate: selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2035),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: healthGreen,
+              secondary: healthGreenSoft,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (pickedDate == null) return;
@@ -199,29 +238,49 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
     return eatenItems / totalItems;
   }
 
+  double get eatenCalories {
+    final menu = dailyMenu;
+    if (menu == null) return 0.0;
+
+    double total = 0.0;
+
+    for (final meal in menu.meals) {
+      for (final item in meal.items) {
+        if (item.isEaten) {
+          total += item.energyKcal;
+        }
+      }
+    }
+
+    return total;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: background,
       appBar: AppBar(
         title: const Text(
           'Rekomendasi Menu',
-          style: TextStyle(fontWeight: FontWeight.w800, color: textDark),
+          style: TextStyle(fontWeight: FontWeight.w900, color: textDark),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: background,
+        surfaceTintColor: background,
         elevation: 0,
         foregroundColor: textDark,
       ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: fetchMenuByDate,
+          color: healthGreen,
           child: ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             children: [
               DateSelectorCard(
                 dateText: formatDateLong(selectedDate),
                 onTap: pickDate,
               ),
+
               const SizedBox(height: 18),
 
               if (errorMessage != null) ...[
@@ -230,10 +289,10 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
               ],
 
               if (isLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: CircularProgressIndicator(),
+                const Padding(
+                  padding: EdgeInsets.all(40),
+                  child: Center(
+                    child: CircularProgressIndicator(color: healthGreen),
                   ),
                 )
               else if (dailyMenu == null)
@@ -243,7 +302,11 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
                   onGenerate: generateWeeklyMenu,
                 )
               else ...[
-                DailyNutritionSummary(menu: dailyMenu!),
+                DailyNutritionSummary(
+                  menu: dailyMenu!,
+                  eatenCalories: eatenCalories,
+                ),
+
                 const SizedBox(height: 18),
 
                 MealProgressCard(
@@ -251,17 +314,29 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
                   totalItems: totalItems,
                   progress: progress,
                 ),
-                const SizedBox(height: 22),
 
-                const Text(
+                const SizedBox(height: 28),
+
+                Text(
                   'Menu Harian',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: textDark,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.4,
                   ),
                 ),
-                const SizedBox(height: 14),
+
+                const SizedBox(height: 6),
+
+                Text(
+                  'Centang makanan yang sudah dikonsumsi hari ini.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: textMedium,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
 
                 ...dailyMenu!.meals.map(
                   (meal) => Padding(
@@ -313,78 +388,9 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
   }
 }
 
-class MealProgressCard extends StatelessWidget {
-  const MealProgressCard({
-    super.key,
-    required this.eatenItems,
-    required this.totalItems,
-    required this.progress,
-  });
-
-  final int eatenItems;
-  final int totalItems;
-  final double progress;
-
-  static const Color primaryPurple = Color(0xFF5E4AA0);
-  static const Color cardPurple = Color(0xFFF0EAF5);
-
-  @override
-  Widget build(BuildContext context) {
-    final progressPercent = (progress * 100).round();
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: cardPurple,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Progress Konsumsi Menu',
-            style: TextStyle(
-              color: primaryPurple,
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '$eatenItems dari $totalItems item sudah dimakan',
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(99),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 12,
-              backgroundColor: Colors.white.withOpacity(0.7),
-              color: primaryPurple,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              '$progressPercent%',
-              style: const TextStyle(
-                color: primaryPurple,
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+/* -------------------------------------------------------------------------- */
+/*                                  TOP CARDS                                 */
+/* -------------------------------------------------------------------------- */
 
 class DateSelectorCard extends StatelessWidget {
   const DateSelectorCard({
@@ -396,49 +402,74 @@ class DateSelectorCard extends StatelessWidget {
   final String dateText;
   final VoidCallback onTap;
 
-  static const Color primaryPurple = Color(0xFF5E4AA0);
-  static const Color cardPurple = Color(0xFFF0EAF5);
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+  static const Color borderSoft = Color(0xFFE8E8E8);
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: cardPurple,
-      borderRadius: BorderRadius.circular(18),
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
         onTap: onTap,
-        child: Padding(
+        child: Container(
           padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: borderSoft, width: 1.1),
+          ),
           child: Row(
             children: [
-              Container(
-                width: 54,
-                height: 54,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(16),
-                ),
+              SizedBox(
+                width: 35,
+                height: 35,
                 child: const Icon(
                   Icons.calendar_month_rounded,
-                  color: primaryPurple,
-                  size: 28,
+                  color: textDark,
+                  size: 27,
                 ),
               ),
+
               const SizedBox(width: 14),
+
               Expanded(
-                child: Text(
-                  dateText,
-                  style: const TextStyle(
-                    color: primaryPurple,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tanggal Menu',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: textMedium,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+
+                    const SizedBox(height: 5),
+
+                    Text(
+                      dateText,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: textDark,
+                        fontWeight: FontWeight.w900,
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+
+              const SizedBox(width: 8),
+
               const Icon(
                 Icons.chevron_right_rounded,
-                size: 32,
-                color: Colors.black87,
+                size: 30,
+                color: textMedium,
               ),
             ],
           ),
@@ -448,144 +479,73 @@ class DateSelectorCard extends StatelessWidget {
   }
 }
 
-class EmptyMenuCard extends StatelessWidget {
-  const EmptyMenuCard({
+class DailyNutritionSummary extends StatelessWidget {
+  const DailyNutritionSummary({
     super.key,
-    required this.dateText,
-    required this.isGenerating,
-    required this.onGenerate,
+    required this.menu,
+    required this.eatenCalories,
   });
 
-  final String dateText;
-  final bool isGenerating;
-  final VoidCallback onGenerate;
-
-  static const Color primaryPurple = Color(0xFF5E4AA0);
-  static const Color cardPurple = Color(0xFFF0EAF5);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: cardPurple,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.restaurant_menu_rounded,
-            size: 48,
-            color: primaryPurple,
-          ),
-          const SizedBox(height: 14),
-          const Text(
-            'Menu belum tersedia',
-            style: TextStyle(
-              color: primaryPurple,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Belum ada rekomendasi menu untuk $dateText.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 18),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: FilledButton.icon(
-              onPressed: isGenerating ? null : onGenerate,
-              icon: isGenerating
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.auto_awesome_rounded),
-              label: Text(
-                isGenerating ? 'Generating...' : 'Generate Weekly Menu',
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: primaryPurple,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class ErrorCard extends StatelessWidget {
-  const ErrorCard({super.key, required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.red.shade50,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.red.shade100),
-      ),
-      child: Text(
-        message,
-        style: TextStyle(
-          color: Colors.red.shade700,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-class DailyNutritionSummary extends StatelessWidget {
-  const DailyNutritionSummary({super.key, required this.menu});
-
   final DailyMenu menu;
+  final double eatenCalories;
 
-  static const Color primaryPurple = Color(0xFF5E4AA0);
-  static const Color cardPurple = Color(0xFFF0EAF5);
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+  static const Color borderSoft = Color(0xFFE8E8E8);
 
   @override
   Widget build(BuildContext context) {
+    final remaining = menu.energyKcal - eatenCalories;
+    final safeRemaining = remaining < 0 ? 0 : remaining;
+
     return Container(
-      padding: const EdgeInsets.all(18),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
       decoration: BoxDecoration(
-        color: cardPurple,
-        borderRadius: BorderRadius.circular(18),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: borderSoft, width: 1.1),
       ),
       child: Column(
         children: [
-          const Text(
-            'Total Menu Harian',
-            style: TextStyle(
-              color: primaryPurple,
-              fontSize: 16,
+          Text(
+            'Target Menu Harian',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: textMedium,
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 6),
+
+          const SizedBox(height: 8),
+
           Text(
             '${menu.energyKcal.round()} kkal',
             style: const TextStyle(
-              color: primaryPurple,
-              fontSize: 34,
+              color: GenderRadioGroupWidget.healthGreen,
+              fontFamily: 'GeistMono',
+              fontSize: 36,
+              height: 1,
               fontWeight: FontWeight.w900,
+              letterSpacing: -1.4,
             ),
           ),
+
+          const SizedBox(height: 10),
+
+          Text(
+            'Tersisa ${safeRemaining.round()} kkal berdasarkan makanan yang sudah dimakan.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: textMedium,
+              fontWeight: FontWeight.w600,
+              height: 1.35,
+            ),
+          ),
+
           const SizedBox(height: 18),
+
           Row(
             children: [
               Expanded(
@@ -626,33 +586,45 @@ class NutritionMiniCard extends StatelessWidget {
   final String label;
   final String value;
 
-  static const Color primaryPurple = Color(0xFF5E4AA0);
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 13),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.55),
-        borderRadius: BorderRadius.circular(14),
+        color: healthGreenSoft,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
           Text(
             label,
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: textMedium,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 5),
-          Text(
-            value,
-            style: const TextStyle(
-              color: primaryPurple,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
+
+          const SizedBox(height: 6),
+
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: textDark,
+                fontFamily: 'GeistMono',
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.4,
+              ),
             ),
           ),
         ],
@@ -660,6 +632,92 @@ class NutritionMiniCard extends StatelessWidget {
     );
   }
 }
+
+class MealProgressCard extends StatelessWidget {
+  const MealProgressCard({
+    super.key,
+    required this.eatenItems,
+    required this.totalItems,
+    required this.progress,
+  });
+
+  final int eatenItems;
+  final int totalItems;
+  final double progress;
+
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+  static const Color borderSoft = Color(0xFFE8E8E8);
+
+  @override
+  Widget build(BuildContext context) {
+    final progressPercent = (progress * 100).round();
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: borderSoft, width: 1.1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Progress Konsumsi',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: textDark,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          Text(
+            '$eatenItems dari $totalItems item sudah dimakan',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: textMedium,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 10,
+              backgroundColor: healthGreenSoft,
+              color: healthGreen,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '$progressPercent%',
+              style: const TextStyle(
+                color: healthGreen,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+                fontFamily: 'GeistMono',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                  MEAL LIST                                 */
+/* -------------------------------------------------------------------------- */
 
 class MealSectionCard extends StatelessWidget {
   const MealSectionCard({
@@ -671,57 +729,88 @@ class MealSectionCard extends StatelessWidget {
   final Meal meal;
   final ValueChanged<MenuItem> onToggleEaten;
 
-  static const Color primaryPurple = Color(0xFF5E4AA0);
-  static const Color cardPurple = Color(0xFFF0EAF5);
-  static const Color softPurple = Color(0xFFF8F5FB);
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+  static const Color borderSoft = Color(0xFFE8E8E8);
 
   @override
   Widget build(BuildContext context) {
+    final eatenCount = meal.items.where((item) => item.isEaten).length;
+
     return Container(
       decoration: BoxDecoration(
-        color: softPurple,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: cardPurple, width: 1),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: borderSoft, width: 1.1),
       ),
-      child: ExpansionTile(
-        initiallyExpanded: true,
-        tilePadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-        childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        collapsedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        title: Text(
-          mealTimeLabel(meal.mealTime),
-          style: const TextStyle(
-            color: primaryPurple,
-            fontSize: 17,
-            fontWeight: FontWeight.w900,
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+          expansionTileTheme: const ExpansionTileThemeData(
+            backgroundColor: Colors.transparent,
+            collapsedBackgroundColor: Colors.transparent,
           ),
         ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(
-            '${meal.items.length} item',
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              fontWeight: FontWeight.w600,
+        child: ExpansionTile(
+          initiallyExpanded: true,
+          tilePadding: const EdgeInsets.fromLTRB(18, 8, 14, 8),
+          childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          collapsedShape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          title: Text(
+            mealTimeLabel(meal.mealTime),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: textDark,
+              fontWeight: FontWeight.w900,
             ),
           ),
-        ),
-        children: [
-          ...meal.items.map(
-            (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: MealItemTile(item: item, onToggleEaten: onToggleEaten),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              '$eatenCount/${meal.items.length} item dimakan',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: textMedium,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-        ],
+          children: [
+            ...meal.items.map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: MealItemTile(item: item, onToggleEaten: onToggleEaten),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  String mealTimeLabel(String mealTime) {
+  static IconData mealIcon(String mealTime) {
+    switch (mealTime) {
+      case 'breakfast':
+        return Icons.wb_sunny_rounded;
+      case 'morning_snack':
+        return Icons.local_cafe_rounded;
+      case 'lunch':
+        return Icons.lunch_dining_rounded;
+      case 'afternoon_snack':
+        return Icons.cookie_rounded;
+      case 'dinner':
+        return Icons.nightlight_round;
+      default:
+        return Icons.restaurant_rounded;
+    }
+  }
+
+  static String mealTimeLabel(String mealTime) {
     switch (mealTime) {
       case 'breakfast':
         return 'Sarapan';
@@ -749,92 +838,110 @@ class MealItemTile extends StatelessWidget {
   final MenuItem item;
   final ValueChanged<MenuItem> onToggleEaten;
 
-  static const Color primaryPurple = Color(0xFF5E4AA0);
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+  static const Color textSoft = Color(0xFF8A8A8A);
+  static const Color borderSoft = Color(0xFFE8E8E8);
 
   @override
   Widget build(BuildContext context) {
     final isEaten = item.isEaten;
 
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
+      color: isEaten ? healthGreenSoft : const Color(0xFFF9F9F9),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         onTap: () => onToggleEaten(item),
-        child: Padding(
+        child: Container(
           padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isEaten ? healthGreen.withValues(alpha: 0.35) : borderSoft,
+
+              width: 1,
+            ),
+          ),
           child: Row(
             children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: isEaten
-                      ? const Color(0xFFE8F5E9)
-                      : const Color(0xFFF0EAF5),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Icon(
-                  isEaten
-                      ? Icons.check_circle_rounded
-                      : Icons.restaurant_rounded,
-                  color: isEaten ? Colors.green : primaryPurple,
-                  size: 22,
-                ),
-              ),
               const SizedBox(width: 12),
+
               Expanded(
-                child: Text(
-                  item.foodName,
-                  style: TextStyle(
-                    color: isEaten
-                        ? Colors.grey.shade500
-                        : const Color(0xFF202124),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    decoration: isEaten
-                        ? TextDecoration.lineThrough
-                        : TextDecoration.none,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.foodName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: isEaten ? textMedium : textDark,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        decoration: isEaten
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
+                      ),
+                    ),
+
+                    const SizedBox(height: 5),
+
+                    Text(
+                      item.urt ?? '-',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: textMedium,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    Text(
+                      item.gram == null
+                          ? '${item.energyKcal.round()} kkal'
+                          : '${item.gram!.round()} g • ${item.energyKcal.round()} kkal',
+                      style: const TextStyle(
+                        color: textSoft,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    item.urt ?? '-',
+
+              const SizedBox(width: 10),
+
+              SizedBox(
+                height: 34,
+                child: FilledButton.tonalIcon(
+                  onPressed: () => onToggleEaten(item),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: isEaten ? Colors.white : healthGreen,
+                    foregroundColor: isEaten ? healthGreen : Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  icon: Icon(
+                    isEaten ? Icons.undo_rounded : Icons.check_rounded,
+                    size: 15,
+                  ),
+                  label: Text(
+                    isEaten ? 'Batal' : 'Dimakan',
                     style: const TextStyle(
-                      color: primaryPurple,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.gram == null ? '-' : '${item.gram!.round()} g',
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 30,
-                    child: FilledButton.tonalIcon(
-                      onPressed: () => onToggleEaten(item),
-                      icon: Icon(
-                        isEaten ? Icons.undo_rounded : Icons.check_rounded,
-                        size: 16,
-                      ),
-                      label: Text(
-                        isEaten ? 'Batal' : 'Dimakan',
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -844,145 +951,148 @@ class MealItemTile extends StatelessWidget {
   }
 }
 
-class DummyDailyMenu {
-  DummyDailyMenu({
-    required this.dayText,
+/* -------------------------------------------------------------------------- */
+/*                                EMPTY & ERROR                               */
+/* -------------------------------------------------------------------------- */
+
+class EmptyMenuCard extends StatelessWidget {
+  const EmptyMenuCard({
+    super.key,
     required this.dateText,
-    required this.energyKcal,
-    required this.proteinG,
-    required this.fatG,
-    required this.carbG,
-    required this.meals,
+    required this.isGenerating,
+    required this.onGenerate,
   });
 
-  final String dayText;
   final String dateText;
-  final double energyKcal;
-  final double proteinG;
-  final double fatG;
-  final double carbG;
-  final List<DummyMeal> meals;
+  final bool isGenerating;
+  final VoidCallback onGenerate;
 
-  factory DummyDailyMenu.today() {
-    return DummyDailyMenu(
-      dayText: 'Jumat',
-      dateText: '22 Mei 2026',
-      energyKcal: 1600,
-      proteinG: 60,
-      fatG: 44,
-      carbG: 240,
-      meals: [
-        DummyMeal(
-          mealTime: 'Sarapan',
-          energyKcal: 420,
-          items: [
-            DummyMealItem(
-              foodName: 'Nasi',
-              categoryCode: 'MP',
-              urt: '1 Gelas',
-              gram: 100,
-              energyKcal: 175,
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color textDark = Color(0xFF25262A);
+  static const Color textMedium = Color(0xFF666666);
+  static const Color borderSoft = Color(0xFFE8E8E8);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(22, 28, 22, 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: borderSoft, width: 1.1),
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            width: 30,
+            height: 30,
+            child: const Icon(
+              Icons.restaurant_menu_rounded,
+              size: 28,
+              color: textDark,
             ),
-            DummyMealItem(
-              foodName: 'Ayam, daging, segar',
-              categoryCode: 'LH',
-              urt: '1 Potong',
-              gram: 40,
-              energyKcal: 120,
+          ),
+
+          const SizedBox(height: 14),
+
+          Text(
+            'Menu belum tersedia',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: textDark,
+              fontWeight: FontWeight.w900,
             ),
-            DummyMealItem(
-              foodName: 'Bayam, segar',
-              categoryCode: 'S',
-              urt: '1 Gelas',
-              gram: 100,
-              energyKcal: 35,
+          ),
+
+          const SizedBox(height: 8),
+
+          Text(
+            'Belum ada rekomendasi menu untuk $dateText.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: textMedium,
+              fontWeight: FontWeight.w500,
+              height: 1.4,
             ),
-          ],
-        ),
-        DummyMeal(
-          mealTime: 'Snack Pagi',
-          energyKcal: 160,
-          items: [
-            DummyMealItem(
-              foodName: 'Apel malang, segar',
-              categoryCode: 'B',
-              urt: '1 Buah',
-              gram: 85,
-              energyKcal: 60,
+          ),
+
+          const SizedBox(height: 18),
+
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: FilledButton.icon(
+              onPressed: isGenerating ? null : onGenerate,
+              icon: isGenerating
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.collections_bookmark),
+              label: Text(
+                isGenerating ? 'Membuat menu...' : 'Buat Menu Mingguan',
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: healthGreen,
+                disabledBackgroundColor: healthGreen.withValues(alpha: 0.35),
+
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
-          ],
-        ),
-        DummyMeal(
-          mealTime: 'Makan Siang',
-          energyKcal: 520,
-          items: [
-            DummyMealItem(
-              foodName: 'Nasi beras merah',
-              categoryCode: 'MP',
-              urt: '1 Gelas',
-              gram: 100,
-              energyKcal: 180,
-            ),
-            DummyMealItem(
-              foodName: 'Ikan kakap, segar',
-              categoryCode: 'LH',
-              urt: '1 Potong',
-              gram: 50,
-              energyKcal: 130,
-            ),
-            DummyMealItem(
-              foodName: 'Tempe kedelai, mentah',
-              categoryCode: 'LN',
-              urt: '2 Potong',
-              gram: 50,
-              energyKcal: 100,
-            ),
-          ],
-        ),
-        DummyMeal(
-          mealTime: 'Snack Sore',
-          energyKcal: 140,
-          items: [
-            DummyMealItem(
-              foodName: 'Melon, segar',
-              categoryCode: 'B',
-              urt: '1 Potong',
-              gram: 100,
-              energyKcal: 45,
-            ),
-          ],
-        ),
-        DummyMeal(
-          mealTime: 'Makan Malam',
-          energyKcal: 360,
-          items: [
-            DummyMealItem(
-              foodName: 'Nasi',
-              categoryCode: 'MP',
-              urt: '1/2 Gelas',
-              gram: 50,
-              energyKcal: 88,
-            ),
-            DummyMealItem(
-              foodName: 'Tahu, mentah',
-              categoryCode: 'LN',
-              urt: '2 Potong',
-              gram: 100,
-              energyKcal: 90,
-            ),
-            DummyMealItem(
-              foodName: 'Wortel, segar',
-              categoryCode: 'S',
-              urt: '1 Gelas',
-              gram: 100,
-              energyKcal: 40,
-            ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }
+
+class ErrorCard extends StatelessWidget {
+  const ErrorCard({super.key, required this.message});
+
+  final String message;
+
+  static const Color errorSoft = Color(0xFFFFECEC);
+  static const Color error = Color(0xFFD84A4A);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: errorSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: error.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline_rounded, color: error, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: error, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                   MODELS                                   */
+/* -------------------------------------------------------------------------- */
 
 class DailyMenu {
   DailyMenu({
@@ -1010,14 +1120,14 @@ class DailyMenu {
   final List<Meal> meals;
 
   factory DailyMenu.fromJson(Map<String, dynamic> json) {
-    final day = json['day'];
-    final summary = day['summary'];
+    final day = json['day'] ?? <String, dynamic>{};
+    final summary = day['summary'] ?? <String, dynamic>{};
 
     return DailyMenu(
-      clientName: json['client']['fullName'] ?? '-',
-      menuRecommendationId: json['menuRecommendationId'],
-      screeningId: json['screeningId'],
-      dietType: json['dietType'],
+      clientName: json['client']?['fullName']?.toString() ?? '-',
+      menuRecommendationId: toInt(json['menuRecommendationId']),
+      screeningId: toInt(json['screeningId']),
+      dietType: json['dietType']?.toString() ?? '-',
       energyKcal: toDouble(summary['energyKcal']),
       proteinG: toDouble(summary['proteinG']),
       fatG: toDouble(summary['fatG']),
@@ -1037,7 +1147,7 @@ class Meal {
 
   factory Meal.fromJson(Map<String, dynamic> json) {
     return Meal(
-      mealTime: json['mealTime'],
+      mealTime: json['mealTime']?.toString() ?? '-',
       items: (json['items'] as List<dynamic>? ?? [])
           .map((item) => MenuItem.fromJson(item))
           .toList(),
@@ -1053,6 +1163,7 @@ class MenuItem {
     required this.portion,
     required this.urt,
     required this.gram,
+    required this.energyKcal,
     required this.isEaten,
   });
 
@@ -1062,57 +1173,42 @@ class MenuItem {
   final double portion;
   final String? urt;
   final double? gram;
+  final double energyKcal;
   bool isEaten;
 
   factory MenuItem.fromJson(Map<String, dynamic> json) {
+    final nutrition = json['nutrition'];
+
     return MenuItem(
-      menuItemId: json['menuItemId'],
-      foodName: json['foodName'] ?? '-',
-      categoryCode: json['categoryCode'] ?? '-',
+      menuItemId: toInt(json['menuItemId']),
+      foodName: json['foodName']?.toString() ?? '-',
+      categoryCode: json['categoryCode']?.toString() ?? '-',
       portion: toDouble(json['portion']),
-      urt: json['urt'],
+      urt: json['urt']?.toString(),
       gram: json['gram'] == null ? null : toDouble(json['gram']),
-      isEaten: json['isEaten'] ?? false,
+      energyKcal: nutrition is Map<String, dynamic>
+          ? toDouble(nutrition['energyKcal'])
+          : 0.0,
+      isEaten: json['isEaten'] == true,
     );
   }
 }
 
-double toDouble(dynamic value) {
+int toInt(dynamic value) {
   if (value == null) return 0;
-  if (value is int) return value.toDouble();
-  if (value is double) return value;
-  if (value is String) return double.tryParse(value) ?? 0;
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  if (value is String) return int.tryParse(value) ?? 0;
 
   return 0;
 }
 
-class DummyMeal {
-  DummyMeal({
-    required this.mealTime,
-    required this.energyKcal,
-    required this.items,
-  });
+double toDouble(dynamic value) {
+  if (value == null) return 0.0;
+  if (value is int) return value.toDouble();
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value) ?? 0.0;
 
-  final String mealTime;
-  final double energyKcal;
-  final List<DummyMealItem> items;
-}
-
-class DummyMealItem {
-  DummyMealItem({
-    required this.foodName,
-    required this.categoryCode,
-    required this.urt,
-    required this.gram,
-    required this.energyKcal,
-    this.isEaten = false,
-  });
-
-  final String foodName;
-  final String categoryCode;
-  final String urt;
-  final double gram;
-  final double energyKcal;
-
-  bool isEaten;
+  return 0.0;
 }

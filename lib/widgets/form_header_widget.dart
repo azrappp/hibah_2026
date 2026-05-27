@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 class FormHeader extends StatelessWidget {
-  const FormHeader({super.key, required this.title});
+  const FormHeader({super.key, required this.title, required this.subtitle});
 
   final String title;
-
+  final String subtitle;
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -20,7 +20,7 @@ class FormHeader extends StatelessWidget {
           ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w600),
         ),
         Text(
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi.',
+          subtitle,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),

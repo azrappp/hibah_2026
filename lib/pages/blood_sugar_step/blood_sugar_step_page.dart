@@ -14,54 +14,137 @@ class BloodSugarStepPage extends StatefulWidget {
 class _BloodSugarStepPageState extends State<BloodSugarStepPage> {
   final formKey = GlobalKey<FormState>();
 
+  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color textMedium = Color(0xFF666666);
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
+    return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
       child: Column(
-        spacing: 16.0,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          FormHeader(title: 'Gula Darah'),
+          const FormHeader(
+            title: 'Gula Darah',
+            subtitle:
+                "Masukkan hasil pemeriksaan gula darah untuk menilai risiko diabetes",
+          ),
+
+          const SizedBox(height: 8),
+
+          const SizedBox(height: 28),
+
           Form(
+            key: formKey,
             child: Column(
-              spacing: 32.0,
               children: <Widget>[
                 TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'FPG',
-                    hintText: '88',
-                    helperText: 'Gula darah puasa (mg/dL)',
-                  ),
                   controller: widget.delegate.fpgController,
-                ),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: '2-h PG',
-                    hintText: '110',
-                    helperText: 'Gula darah 2 jam setelah OGTT (mg/dL)',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
                   ),
+                  textInputAction: TextInputAction.next,
+                  decoration: cleanInputDecoration(
+                    label: 'FPG',
+                    hint: 'Contoh: 88',
+                    helper: 'Gula darah puasa',
+                    suffix: 'mg/dL',
+                  ),
+                ),
+
+                const SizedBox(height: 22),
+
+                TextFormField(
                   controller: widget.delegate.twoHPgController,
-                ),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Random PG',
-                    hintText: '95',
-                    helperText: 'Gula darah sewaktu (mg/dL)',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
                   ),
+                  textInputAction: TextInputAction.next,
+                  decoration: cleanInputDecoration(
+                    label: '2-h PG',
+                    hint: 'Contoh: 110',
+                    helper: 'Gula darah 2 jam setelah OGTT',
+                    suffix: 'mg/dL',
+                  ),
+                ),
+
+                const SizedBox(height: 22),
+
+                TextFormField(
                   controller: widget.delegate.randPgController,
-                ),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'A1C',
-                    hintText: '5.2',
-                    helperText: 'Rata-rata gula darah 2-3 bulan terakhir (%)',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
                   ),
+                  textInputAction: TextInputAction.next,
+                  decoration: cleanInputDecoration(
+                    label: 'Random PG',
+                    hint: 'Contoh: 95',
+                    helper: 'Gula darah sewaktu',
+                    suffix: 'mg/dL',
+                  ),
+                ),
+
+                const SizedBox(height: 22),
+
+                TextFormField(
                   controller: widget.delegate.a1cController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  textInputAction: TextInputAction.done,
+                  decoration: cleanInputDecoration(
+                    label: 'A1C',
+                    hint: 'Contoh: 5.2',
+                    helper: 'Rata-rata gula darah 2–3 bulan terakhir',
+                    suffix: '%',
+                  ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  InputDecoration cleanInputDecoration({
+    required String label,
+    required String hint,
+    required String helper,
+    required String suffix,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      helperText: helper,
+      suffixText: suffix,
+      filled: true,
+      fillColor: Colors.white,
+      labelStyle: const TextStyle(
+        color: textMedium,
+        fontWeight: FontWeight.w600,
+      ),
+      hintStyle: TextStyle(
+        color: Colors.grey.shade400,
+        fontWeight: FontWeight.w500,
+      ),
+      helperStyle: TextStyle(
+        color: Colors.grey.shade500,
+        fontWeight: FontWeight.w500,
+      ),
+      suffixStyle: const TextStyle(
+        color: healthGreen,
+        fontWeight: FontWeight.w800,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: Color(0xFFE8E8E8), width: 1.2),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: healthGreen, width: 1.6),
       ),
     );
   }

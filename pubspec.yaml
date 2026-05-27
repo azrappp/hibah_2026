@@ -38,6 +38,10 @@ dependencies:
   provider: ^6.1.5+1
   fl_chart: ^0.69.0
   shared_preferences: ^2.2.3
+  flutter_svg: ^2.0.10
+  flutter_launcher_icons: "^0.14.4"
+  flutter_dotenv: ^6.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -48,6 +52,9 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/icons/icon.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -59,7 +66,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   # To add assets to your application, add an assets section, like this:
-  # assets:
+  assets:
+    - assets/icons/female.svg
+    - assets/icons/male.svg
+    - assets/icons/icon.png
+    - .env
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
