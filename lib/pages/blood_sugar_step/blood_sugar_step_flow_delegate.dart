@@ -14,10 +14,11 @@ class BloodSugarStepFlowDelegate extends ChangeNotifier
 
   final FlowData flowData;
   final bool backable;
-  final fpgController = TextEditingController();
-  final twoHPgController = TextEditingController();
-  final randPgController = TextEditingController();
-  final a1cController = TextEditingController();
+
+  final glucoseValueController = TextEditingController();
+
+  String glucoseTestType = 'TWO_HOUR';
+  bool hasClassicSymptoms = false;
 
   bool _isLoading = false;
 
@@ -27,22 +28,102 @@ class BloodSugarStepFlowDelegate extends ChangeNotifier
   @override
   bool get isLoading => _isLoading;
 
+  void setGlucoseTestType(String value) {
+    glucoseTestType = value;
+
+    if (glucoseTestType != 'RANDOM') {
+      hasClassicSymptoms = false;
+    }
+
+    notifyListeners();
+  }
+
+  void setHasClassicSymptoms(bool value) {
+    hasClassicSymptoms = value;
+    notifyListeners();
+  }
+
+  String get valueSuffix {
+    if (glucoseTestType == 'HBA1C') {
+      return '%';
+    }
+
+    return 'mg/dL';
+  }
+
+  String get valueHint {
+    switch (glucoseTestType) {
+      case 'FPG':
+        return 'Contoh: 88';
+      case 'TWO_HOUR':
+        return 'Contoh: 120';
+      case 'RANDOM':
+        return 'Contoh: 110';
+      case 'HBA1C':
+        return 'Contoh: 5.2';
+      default:
+        return 'Contoh: 110';
+    }
+  }
+
+  String get valueLabel {
+    switch (glucoseTestType) {
+      case 'FPG':
+        return 'FPG';
+      case 'TWO_HOUR':
+        return '2-h PG';
+      case 'RANDOM':
+        return 'Random PG';
+      case 'HBA1C':
+        return 'HbA1c';
+      default:
+        return 'Nilai gula darah';
+    }
+  }
+
+  String get valueHelper {
+    switch (glucoseTestType) {
+      case 'FPG':
+        return 'Masukkan hasil gula darah puasa';
+      case 'TWO_HOUR':
+        return 'Masukkan hasil gula darah 2 jam setelah makan';
+      case 'RANDOM':
+        return 'Masukkan hasil gula darah sewaktu';
+      case 'HBA1C':
+        return 'Masukkan hasil HbA1c';
+      default:
+        return 'Masukkan nilai pemeriksaan';
+    }
+  }
+
   @override
   Future<ApiResponse> onNext() async {
     try {
+      final glucoseValue = double.tryParse(glucoseValueController.text.trim());
+
+      if (glucoseValue == null || glucoseValue <= 0) {
+        debugPrint('Invalid glucose value');
+        return ApiResponse(success: false);
+      }
+
       _isLoading = true;
       notifyListeners();
+
+      final body = <String, dynamic>{
+        "glucoseTestType": glucoseTestType,
+        "glucoseValue": glucoseValue,
+      };
+
+      if (glucoseTestType == 'RANDOM') {
+        body["hasClassicSymptoms"] = hasClassicSymptoms;
+      }
 
       final response = await http.post(
         AppConfig.apiUri('/api/screening/${flowData.screeningId}/biochemical'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "fastingGlucoseMgDl": fpgController.text,
-          "postprandialGlucoseMgDl": twoHPgController.text,
-          "randomGlucoseMgDl": randPgController.text,
-          "hba1cPercent": a1cController.text,
-        }),
+        body: jsonEncode(body),
       );
+
       if (response.statusCode == 201) {
         debugPrint(response.body);
         final mapResponse = jsonDecode(response.body);
@@ -58,5 +139,11 @@ class BloodSugarStepFlowDelegate extends ChangeNotifier
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    glucoseValueController.dispose();
+    super.dispose();
   }
 }

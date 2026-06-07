@@ -210,6 +210,10 @@ class _HomePageState extends State<HomePage> {
               child: const Text('Batal'),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+              ),
               onPressed: () {
                 Navigator.pop(dialogContext, true);
               },
@@ -973,7 +977,7 @@ class HomeHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${data.greeting} 👋',
+                '${data.greeting}',
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
@@ -1349,7 +1353,7 @@ class CalorieSideInfo extends StatelessWidget {
           children: [
             const Icon(Icons.directions_walk, size: 24, color: AppColors.beige),
 
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
 
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -1359,7 +1363,7 @@ class CalorieSideInfo extends StatelessWidget {
                   '${data.activityLevel}',
                   style: const TextStyle(
                     fontFamily: 'GeistMono',
-                    fontSize: 18,
+                    fontSize: 12,
                     height: 1,
                     fontWeight: FontWeight.w900,
                     color: AppColors.textDark,

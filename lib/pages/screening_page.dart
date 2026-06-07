@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hibah_2026/main.dart';
 import 'package:provider/provider.dart';
+import 'package:hibah_2026/pages/medicine_step/medicine_step_flow_delegate.dart';
 
 class ScreeningPage extends StatefulWidget {
   const ScreeningPage({super.key});
@@ -13,8 +14,8 @@ class _ScreeningPageState extends State<ScreeningPage> {
   late final PageController _controller;
   VoidCallback? _flowListener;
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color textDark = Color(0xFF25262A);
   static const Color background = Color(0xFFF7F7F7);
 
@@ -67,8 +68,8 @@ class _ScreeningPageState extends State<ScreeningPage> {
         return Scaffold(
           resizeToAvoidBottomInset: true,
           backgroundColor: background,
-
           appBar: AppBar(
+            automaticallyImplyLeading: false,
             elevation: 0,
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.white,
@@ -177,6 +178,68 @@ class _ScreeningPageState extends State<ScreeningPage> {
                                   ? null
                                   : () async {
                                       await flow.next();
+
+                                      if (!context.mounted) return;
+
+                                      if (delegate
+                                          is MedicineStepFlowDelegate) {
+                                        final medicineDelegate = delegate;
+
+                                        if (medicineDelegate
+                                            .shouldStopForInsulin) {
+                                          await showDialog<void>(
+                                            context: context,
+                                            barrierDismissible: false,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(22),
+                                                ),
+                                                title: const Text(
+                                                  'Konsultasi Diperlukan',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w800,
+                                                  ),
+                                                ),
+                                                content: const Text(
+                                                  'Penggunaan insulin memerlukan penyesuaian diet secara individual. '
+                                                  'Silakan konsultasikan dengan dokter penyakit dalam atau ahli gizi sebelum melanjutkan rekomendasi.',
+                                                  style: TextStyle(
+                                                    height: 1.45,
+                                                  ),
+                                                ),
+                                                actionsPadding:
+                                                    const EdgeInsets.fromLTRB(
+                                                      20,
+                                                      0,
+                                                      20,
+                                                      16,
+                                                    ),
+                                                actions: [
+                                                  SizedBox(
+                                                    width: double.infinity,
+                                                    child: FilledButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(context);
+                                                      },
+                                                      child: const Text(
+                                                        'Mengerti',
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+
+                                          medicineDelegate
+                                              .clearMedicineFields();
+                                          flow.stopScreeningAndReset();
+
+                                          return;
+                                        }
+                                      }
                                     },
                               child: isLoading
                                   ? const SizedBox(

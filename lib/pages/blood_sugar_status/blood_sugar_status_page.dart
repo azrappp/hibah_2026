@@ -14,7 +14,7 @@ class BloodSugarStatusPage extends StatefulWidget {
 }
 
 class _BloodSugarStatusPageState extends State<BloodSugarStatusPage> {
-  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreen = Color(0xFF2F5D50);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
 
@@ -38,13 +38,11 @@ class _BloodSugarStatusPageState extends State<BloodSugarStatusPage> {
         final response = widget.delegate.apiResponse;
         final data = response?.data?['data'];
 
-        final glucoseStatus = data?['glucoseStatus']?.toString() ?? '-';
-        final fastingGlucose = formatValue(data?['fastingGlucoseMgDl']);
-        final postprandialGlucose = formatValue(
-          data?['postprandialGlucoseMgDl'],
-        );
-        final randomGlucose = formatValue(data?['randomGlucoseMgDl']);
-        final hba1c = formatValue(data?['hba1cPercent']);
+        final diagnosis = data?['diagnosis']?.toString() ?? '-';
+        final glucoseTestType = data?['glucoseTestType']?.toString() ?? '-';
+        final glucoseValue = formatValue(data?['glucoseValue']);
+        final unit = getUnit(glucoseTestType);
+        final testLabel = getGlucoseTestLabel(glucoseTestType);
 
         return SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -55,10 +53,8 @@ class _BloodSugarStatusPageState extends State<BloodSugarStatusPage> {
               const FormHeader(
                 title: 'Status Gula Darah',
                 subtitle:
-                    "Hasil pemeriksaan gula darah digunakan untuk menilai risiko diabetes.",
+                    'Hasil pemeriksaan gula darah digunakan untuk menilai risiko diabetes.',
               ),
-
-              const SizedBox(height: 8),
 
               const SizedBox(height: 24),
 
@@ -68,23 +64,18 @@ class _BloodSugarStatusPageState extends State<BloodSugarStatusPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Row(
-                      children: [
-                        Text(
-                          'Diagnosis',
-                          style: Theme.of(context).textTheme.labelLarge
-                              ?.copyWith(
-                                color: textDark,
-                                fontWeight: FontWeight.w800,
-                              ),
-                        ),
-                      ],
+                    Text(
+                      'Diagnosis',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: textDark,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
 
                     const SizedBox(height: 20),
 
                     Text(
-                      glucoseStatus,
+                      diagnosis,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
                             fontWeight: FontWeight.w900,
@@ -96,7 +87,7 @@ class _BloodSugarStatusPageState extends State<BloodSugarStatusPage> {
                     const SizedBox(height: 8),
 
                     Text(
-                      getGlucoseMessage(glucoseStatus),
+                      getGlucoseMessage(diagnosis),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: textMedium,
                         fontWeight: FontWeight.w500,
@@ -109,43 +100,7 @@ class _BloodSugarStatusPageState extends State<BloodSugarStatusPage> {
 
               const SizedBox(height: 18),
 
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: SummaryCard(
-                      label: 'FPG',
-                      value: fastingGlucose,
-                      unit: 'mg/dL',
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: SummaryCard(
-                      label: '2-h PG',
-                      value: postprandialGlucose,
-                      unit: 'mg/dL',
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 14),
-
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: SummaryCard(
-                      label: 'Random PG',
-                      value: randomGlucose,
-                      unit: 'mg/dL',
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: SummaryCard(label: 'A1C', value: hba1c, unit: '%'),
-                  ),
-                ],
-              ),
+              SummaryCard(label: testLabel, value: glucoseValue, unit: unit),
             ],
           ),
         );
@@ -155,7 +110,41 @@ class _BloodSugarStatusPageState extends State<BloodSugarStatusPage> {
 
   String formatValue(dynamic value) {
     if (value == null) return '-';
-    return value.toString();
+
+    final numberValue = num.tryParse(value.toString());
+
+    if (numberValue == null) {
+      return value.toString();
+    }
+
+    if (numberValue % 1 == 0) {
+      return numberValue.toInt().toString();
+    }
+
+    return numberValue.toStringAsFixed(1);
+  }
+
+  String getUnit(String glucoseTestType) {
+    if (glucoseTestType == 'HBA1C') {
+      return '%';
+    }
+
+    return 'mg/dL';
+  }
+
+  String getGlucoseTestLabel(String glucoseTestType) {
+    switch (glucoseTestType) {
+      case 'FPG':
+        return 'FPG';
+      case 'TWO_HOUR':
+        return '2-h PG';
+      case 'RANDOM':
+        return 'Random PG';
+      case 'HBA1C':
+        return 'HbA1c';
+      default:
+        return 'Pemeriksaan Gula Darah';
+    }
   }
 
   String getGlucoseMessage(String status) {
@@ -171,6 +160,14 @@ class _BloodSugarStatusPageState extends State<BloodSugarStatusPage> {
 
     if (normalized.contains('diabetes')) {
       return 'Kadar gula darah tinggi dan perlu tindak lanjut kesehatan.';
+    }
+
+    if (normalized.contains('confirmation')) {
+      return 'Hasil pemeriksaan memerlukan konfirmasi atau pemeriksaan lanjutan.';
+    }
+
+    if (normalized.contains('low')) {
+      return 'Kadar gula darah rendah dan perlu diperhatikan.';
     }
 
     return 'Pantau hasil gula darah secara berkala untuk menjaga kesehatan.';

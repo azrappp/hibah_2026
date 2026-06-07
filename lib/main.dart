@@ -28,10 +28,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();
-
   final appSession = AppSession();
   await appSession.loadSession();
-
   runApp(ChangeNotifierProvider.value(value: appSession, child: const MyApp()));
 }
 
@@ -49,6 +47,13 @@ class MyApp extends StatelessWidget {
         inputDecorationTheme: const InputDecorationTheme(
           border: OutlineInputBorder(),
         ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+        ),
       ),
       home: const HomePage(),
     );
@@ -59,6 +64,11 @@ class FlowData {
   String? clientId;
   String? screeningId;
   bool isRepeatScreening;
+  void reset() {
+    clientId = null;
+    screeningId = null;
+    isRepeatScreening = false;
+  }
 
   FlowData({this.clientId, this.screeningId, this.isRepeatScreening = false});
 }
@@ -217,6 +227,12 @@ class FlowController extends ChangeNotifier {
       currentIndex++;
       notifyListeners();
     }
+  }
+
+  void stopScreeningAndReset() {
+    flowData.reset();
+    currentIndex = 0;
+    notifyListeners();
   }
 
   void prev() {

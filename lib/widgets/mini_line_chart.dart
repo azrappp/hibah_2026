@@ -15,8 +15,8 @@ class MiniLineChart extends StatelessWidget {
   final String unit;
   final double height;
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color gridSoft = Color(0xFFEDEDED);
   static const Color textSoft = Color(0xFF8A8A8A);
   static const Color textDark = Color(0xFF25262A);

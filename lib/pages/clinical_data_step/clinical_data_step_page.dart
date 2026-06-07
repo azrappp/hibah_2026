@@ -14,7 +14,7 @@ class ClinicalDataStepPage extends StatefulWidget {
 class _ClinicalDataStepPageState extends State<ClinicalDataStepPage> {
   final formKey = GlobalKey<FormState>();
 
-  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreen = Color(0xFF2F5D50);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
 

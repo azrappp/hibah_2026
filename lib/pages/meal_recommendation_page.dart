@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hibah_2026/config/app_config.dart';
 import 'package:hibah_2026/widgets/gender_radio_group_widget.dart';
+import 'package:hibah_2026/pages/menu_history/menu_day_list_page.dart';
 import 'package:http/http.dart' as http;
 
 class MealRecommendationPage extends StatefulWidget {
@@ -19,13 +20,17 @@ class MealRecommendationPage extends StatefulWidget {
   State<MealRecommendationPage> createState() => _MealRecommendationPageState();
 }
 
-class _MealRecommendationPageState extends State<MealRecommendationPage> {
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+class _MealRecommendationPageState extends State<MealRecommendationPage>
+    with TickerProviderStateMixin {
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color background = Color(0xFFF7F7F7);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
-
+  final eatenTrayKey = GlobalKey();
+  final List<int> eatenOrderIds = [];
+  final eatenTrayScrollController = ScrollController();
+  final Set<int> animatingItemIds = {};
   DateTime selectedDate = DateTime.now();
 
   bool isLoading = false;
@@ -33,6 +38,11 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
   String? errorMessage;
 
   DailyMenu? dailyMenu;
+  @override
+  void dispose() {
+    eatenTrayScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -46,6 +56,32 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
     final day = selectedDate.day.toString().padLeft(2, '0');
 
     return '$year-$month-$day';
+  }
+
+  List<MenuItem> get allMenuItems {
+    final menu = dailyMenu;
+    if (menu == null) return [];
+
+    return menu.meals.expand((meal) => meal.items).toList();
+  }
+
+  List<MenuItem> get eatenMenuItems {
+    final items = allMenuItems.where((item) => item.isEaten).toList();
+
+    final orderedItems = <MenuItem>[];
+
+    for (final id in eatenOrderIds) {
+      final index = items.indexWhere((item) => item.menuItemId == id);
+      if (index != -1) {
+        orderedItems.add(items[index]);
+      }
+    }
+
+    final missingItems = items.where((item) {
+      return !eatenOrderIds.contains(item.menuItemId);
+    }).toList();
+
+    return [...orderedItems, ...missingItems];
   }
 
   Future<void> fetchMenuByDate() async {
@@ -101,6 +137,206 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
     }
   }
 
+  Future<void> animateFoodToEatenTray({
+    required GlobalKey sourceKey,
+    required String imageAsset,
+  }) async {
+    final sourceContext = sourceKey.currentContext;
+    final targetContext = eatenTrayKey.currentContext;
+
+    if (sourceContext == null || targetContext == null) return;
+
+    final sourceBox = sourceContext.findRenderObject() as RenderBox?;
+    final targetBox = targetContext.findRenderObject() as RenderBox?;
+
+    if (sourceBox == null || targetBox == null) return;
+
+    final overlay = Overlay.of(context);
+
+    final sourceTopLeft = sourceBox.localToGlobal(Offset.zero);
+    final sourceCenter = Offset(
+      sourceTopLeft.dx + sourceBox.size.width / 2,
+      sourceTopLeft.dy + sourceBox.size.height / 2,
+    );
+
+    final trayTopLeft = targetBox.localToGlobal(Offset.zero);
+
+    const trayHorizontalPadding = 12.0;
+    const itemSize = 52.0;
+    const itemGap = 10.0;
+    const itemStep = itemSize + itemGap;
+
+    final nextIndex = eatenMenuItems.length;
+
+    final maxVisibleX = targetBox.size.width - trayHorizontalPadding - itemSize;
+    final rawTargetX = trayHorizontalPadding + (nextIndex * itemStep);
+
+    final targetX = rawTargetX > maxVisibleX ? maxVisibleX : rawTargetX;
+
+    final targetCenter = Offset(
+      trayTopLeft.dx + targetX + itemSize / 2,
+      trayTopLeft.dy + targetBox.size.height / 2,
+    );
+
+    final controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 760),
+    );
+
+    final curve = CurvedAnimation(
+      parent: controller,
+      curve: Curves.easeOutQuart,
+    );
+
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (_) {
+        return AnimatedBuilder(
+          animation: curve,
+          builder: (_, __) {
+            final t = curve.value;
+
+            final controlPoint = Offset(
+              sourceCenter.dx + (targetCenter.dx - sourceCenter.dx) * 0.45,
+              sourceCenter.dy - 90,
+            );
+
+            final p0 = sourceCenter;
+            final p1 = controlPoint;
+            final p2 = targetCenter;
+
+            final x =
+                (1 - t) * (1 - t) * p0.dx +
+                2 * (1 - t) * t * p1.dx +
+                t * t * p2.dx;
+
+            final y =
+                (1 - t) * (1 - t) * p0.dy +
+                2 * (1 - t) * t * p1.dy +
+                t * t * p2.dy;
+
+            final scale = 1.0 - (t * 0.12);
+
+            final opacity = t < 0.45
+                ? 0.2 - (t / 0.45 * 0.45)
+                : 0.55 + ((t - 0.45) / 0.55 * 0.45);
+            return Positioned(
+              left: x - itemSize / 2,
+              top: y - itemSize / 2,
+              child: IgnorePointer(
+                child: Opacity(
+                  opacity: opacity.clamp(0.0, 1.0),
+                  child: Transform.scale(
+                    scale: scale,
+                    child: SizedBox(
+                      width: itemSize,
+                      height: itemSize,
+                      child: Image.asset(imageAsset, fit: BoxFit.contain),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    overlay.insert(entry);
+    await controller.forward();
+
+    entry.remove();
+    controller.dispose();
+  }
+
+  Future<void> toggleEaten(
+    MenuItem item,
+    GlobalKey imageKey,
+    String imageAsset,
+  ) async {
+    if (animatingItemIds.contains(item.menuItemId)) return;
+
+    final previousValue = item.isEaten;
+
+    setState(() {
+      animatingItemIds.add(item.menuItemId);
+    });
+
+    try {
+      if (!item.isEaten) {
+        await animateFoodToEatenTray(
+          sourceKey: imageKey,
+          imageAsset: imageAsset,
+        );
+      }
+
+      setState(() {
+        item.isEaten = !item.isEaten;
+
+        if (item.isEaten) {
+          eatenOrderIds.remove(item.menuItemId);
+          eatenOrderIds.add(item.menuItemId);
+        } else {
+          eatenOrderIds.remove(item.menuItemId);
+        }
+      });
+      if (item.isEaten) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (eatenTrayScrollController.hasClients) {
+            eatenTrayScrollController.animateTo(
+              eatenTrayScrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 360),
+              curve: Curves.easeOutCubic,
+            );
+          }
+        });
+      }
+
+      final uri = AppConfig.apiUri('/api/meal/items/${item.menuItemId}/eaten');
+
+      final response = await http.patch(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'isEaten': item.isEaten}),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode != 200) {
+        setState(() {
+          item.isEaten = previousValue;
+        });
+
+        debugPrint(
+          'Failed update eaten: ${response.statusCode} - ${response.body}',
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal memperbarui status makanan.')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        item.isEaten = previousValue;
+      });
+
+      debugPrint('Exception update eaten: $e');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak dapat terhubung ke server.')),
+      );
+    } finally {
+      if (!mounted) return;
+
+      setState(() {
+        animatingItemIds.remove(item.menuItemId);
+      });
+    }
+  }
+
   Future<void> generateWeeklyMenu() async {
     try {
       setState(() {
@@ -150,44 +386,13 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
     }
   }
 
-  Future<void> toggleEaten(MenuItem item) async {
-    final previousValue = item.isEaten;
-
-    setState(() {
-      item.isEaten = !item.isEaten;
-    });
-
-    try {
-      final uri = AppConfig.apiUri('/api/meal/items/${item.menuItemId}/eaten');
-
-      final response = await http.patch(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'isEaten': item.isEaten}),
-      );
-
-      if (!mounted) return;
-
-      if (response.statusCode != 200) {
-        setState(() {
-          item.isEaten = previousValue;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal memperbarui status makanan.')),
-        );
-      }
-    } catch (_) {
-      if (!mounted) return;
-
-      setState(() {
-        item.isEaten = previousValue;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tidak dapat terhubung ke server.')),
-      );
-    }
+  Future<void> openDailyMenus() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MenuDayListPage(clientId: widget.clientId),
+      ),
+    );
   }
 
   Future<void> pickDate() async {
@@ -264,17 +469,36 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
           'Rekomendasi Menu',
           style: TextStyle(fontWeight: FontWeight.w900, color: textDark),
         ),
+        actions: [
+          IconButton(
+            onPressed: openDailyMenus,
+            icon: const Icon(Icons.calendar_view_week_rounded),
+            tooltip: 'Daftar Menu',
+          ),
+        ],
         backgroundColor: background,
         surfaceTintColor: background,
         elevation: 0,
         foregroundColor: textDark,
       ),
+      bottomNavigationBar: dailyMenu == null
+          ? null
+          : SafeArea(
+              top: false,
+              child: EatenFoodTray(
+                key: eatenTrayKey,
+                items: eatenMenuItems,
+                scrollController: eatenTrayScrollController,
+                progress: progress,
+                totalItems: totalItems,
+              ),
+            ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: fetchMenuByDate,
           color: healthGreen,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
             children: [
               DateSelectorCard(
                 dateText: formatDateLong(selectedDate),
@@ -307,19 +531,11 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
                   eatenCalories: eatenCalories,
                 ),
 
-                const SizedBox(height: 18),
-
-                MealProgressCard(
-                  eatenItems: eatenItems,
-                  totalItems: totalItems,
-                  progress: progress,
-                ),
-
                 const SizedBox(height: 28),
 
                 Text(
                   'Menu Harian',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: textDark,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.4,
@@ -344,6 +560,8 @@ class _MealRecommendationPageState extends State<MealRecommendationPage> {
                     child: MealSectionCard(
                       meal: meal,
                       onToggleEaten: toggleEaten,
+                      isItemBusy: (menuItemId) =>
+                          animatingItemIds.contains(menuItemId),
                     ),
                   ),
                 ),
@@ -402,8 +620,8 @@ class DateSelectorCard extends StatelessWidget {
   final String dateText;
   final VoidCallback onTap;
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
   static const Color borderSoft = Color(0xFFE8E8E8);
@@ -489,8 +707,8 @@ class DailyNutritionSummary extends StatelessWidget {
   final DailyMenu menu;
   final double eatenCalories;
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
   static const Color borderSoft = Color(0xFFE8E8E8);
@@ -586,8 +804,8 @@ class NutritionMiniCard extends StatelessWidget {
   final String label;
   final String value;
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
 
@@ -645,8 +863,8 @@ class MealProgressCard extends StatelessWidget {
   final int totalItems;
   final double progress;
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
   static const Color borderSoft = Color(0xFFE8E8E8);
@@ -666,7 +884,7 @@ class MealProgressCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Progress Konsumsi',
+            'Kalori Terpenuhi',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
               color: textDark,
               fontWeight: FontWeight.w900,
@@ -676,7 +894,7 @@ class MealProgressCard extends StatelessWidget {
           const SizedBox(height: 6),
 
           Text(
-            '$eatenItems dari $totalItems item sudah dimakan',
+            '$eatenItems dari $totalItems makanan sudah dimakan',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: textMedium,
               fontWeight: FontWeight.w600,
@@ -724,13 +942,19 @@ class MealSectionCard extends StatelessWidget {
     super.key,
     required this.meal,
     required this.onToggleEaten,
+    required this.isItemBusy,
   });
 
   final Meal meal;
-  final ValueChanged<MenuItem> onToggleEaten;
-
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  final Future<void> Function(
+    MenuItem item,
+    GlobalKey imageKey,
+    String imageAsset,
+  )
+  onToggleEaten;
+  final bool Function(int menuItemId) isItemBusy;
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
   static const Color borderSoft = Color(0xFFE8E8E8);
@@ -770,21 +994,15 @@ class MealSectionCard extends StatelessWidget {
               fontWeight: FontWeight.w900,
             ),
           ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              '$eatenCount/${meal.items.length} item dimakan',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: textMedium,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
           children: [
             ...meal.items.map(
               (item) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: MealItemTile(item: item, onToggleEaten: onToggleEaten),
+                child: MealItemTile(
+                  item: item,
+                  onToggleEaten: onToggleEaten,
+                  isBusy: isItemBusy(item.menuItemId),
+                ),
               ),
             ),
           ],
@@ -833,13 +1051,21 @@ class MealItemTile extends StatelessWidget {
     super.key,
     required this.item,
     required this.onToggleEaten,
+    required this.isBusy,
   });
 
   final MenuItem item;
-  final ValueChanged<MenuItem> onToggleEaten;
+  final bool isBusy;
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  final Future<void> Function(
+    MenuItem item,
+    GlobalKey imageKey,
+    String imageAsset,
+  )
+  onToggleEaten;
+
+  static const Color accent = Color(0xFF2F5D50);
+  static const Color accentSoft = Color(0xFFEFF4F1);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
   static const Color textSoft = Color(0xFF8A8A8A);
@@ -848,109 +1074,104 @@ class MealItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEaten = item.isEaten;
+    final imageKey = GlobalKey();
+
+    final imageAsset = getFoodImageAsset(
+      categoryCode: item.categoryCode,
+      foodName: item.foodName,
+    );
 
     return Material(
-      color: isEaten ? healthGreenSoft : const Color(0xFFF9F9F9),
+      color: Colors.white,
       borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: () => onToggleEaten(item),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isEaten ? healthGreen.withValues(alpha: 0.35) : borderSoft,
-
-              width: 1,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isEaten ? accent.withValues(alpha: 0.30) : borderSoft,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              key: imageKey,
+              width: 52,
+              height: 52,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF6F6F6),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Opacity(
+                opacity: isEaten ? 0.3 : 1.0,
+                child: Image.asset(imageAsset, fit: BoxFit.contain),
+              ),
             ),
-          ),
-          child: Row(
-            children: [
-              const SizedBox(width: 12),
 
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.foodName,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: isEaten ? textMedium : textDark,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                        decoration: isEaten
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
-                      ),
-                    ),
+            const SizedBox(width: 14),
 
-                    const SizedBox(height: 5),
-
-                    Text(
-                      item.urt ?? '-',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: textMedium,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    Text(
-                      item.gram == null
-                          ? '${item.energyKcal.round()} kkal'
-                          : '${item.gram!.round()} g • ${item.energyKcal.round()} kkal',
-                      style: const TextStyle(
-                        color: textSoft,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 10),
-
-              SizedBox(
-                height: 34,
-                child: FilledButton.tonalIcon(
-                  onPressed: () => onToggleEaten(item),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: isEaten ? Colors.white : healthGreen,
-                    foregroundColor: isEaten ? healthGreen : Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                  icon: Icon(
-                    isEaten ? Icons.undo_rounded : Icons.check_rounded,
-                    size: 15,
-                  ),
-                  label: Text(
-                    isEaten ? 'Batal' : 'Dimakan',
-                    style: const TextStyle(
-                      fontSize: 11,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.foodName,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isEaten ? textMedium : textDark,
+                      fontSize: 14,
                       fontWeight: FontWeight.w900,
+                      height: 1.3,
                     ),
                   ),
-                ),
+
+                  const SizedBox(height: 6),
+
+                  Text(
+                    item.urt ?? '-',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isEaten ? textMedium : textDark,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  Text(
+                    item.gram == null
+                        ? '${item.energyKcal.round()} kkal'
+                        : '${item.gram!.round()} g • ${item.energyKcal.round()} kkal',
+                    style: const TextStyle(
+                      color: textSoft,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(width: 10),
+
+            _EatenActionButton(
+              isEaten: isEaten,
+              isBusy: isBusy,
+              onPressed: isBusy
+                  ? null
+                  : () => onToggleEaten(item, imageKey, imageAsset),
+            ),
+          ],
         ),
       ),
     );
   }
 }
-
 /* -------------------------------------------------------------------------- */
 /*                                EMPTY & ERROR                               */
 /* -------------------------------------------------------------------------- */
@@ -967,8 +1188,8 @@ class EmptyMenuCard extends StatelessWidget {
   final bool isGenerating;
   final VoidCallback onGenerate;
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
   static const Color borderSoft = Color(0xFFE8E8E8);
@@ -1145,13 +1366,39 @@ class Meal {
   final String mealTime;
   final List<MenuItem> items;
 
+  static const List<String> categoryOrder = [
+    'MP',
+    'LH',
+    'LN',
+    'S',
+    'B',
+    'SS',
+    'M',
+    'G',
+  ];
+
+  static int categoryRank(String code) {
+    final index = categoryOrder.indexOf(code.toUpperCase());
+    return index == -1 ? 999 : index;
+  }
+
   factory Meal.fromJson(Map<String, dynamic> json) {
-    return Meal(
-      mealTime: json['mealTime']?.toString() ?? '-',
-      items: (json['items'] as List<dynamic>? ?? [])
-          .map((item) => MenuItem.fromJson(item))
-          .toList(),
-    );
+    final items = (json['items'] as List<dynamic>? ?? [])
+        .map((item) => MenuItem.fromJson(item))
+        .toList();
+
+    items.sort((a, b) {
+      final rankA = categoryRank(a.categoryCode);
+      final rankB = categoryRank(b.categoryCode);
+
+      if (rankA != rankB) {
+        return rankA.compareTo(rankB);
+      }
+
+      return a.foodName.compareTo(b.foodName);
+    });
+
+    return Meal(mealTime: json['mealTime']?.toString() ?? '-', items: items);
   }
 }
 
@@ -1194,6 +1441,81 @@ class MenuItem {
   }
 }
 
+String getFoodImageAsset({
+  required String categoryCode,
+  required String foodName,
+}) {
+  final code = categoryCode.toUpperCase();
+  final name = foodName.toLowerCase();
+
+  if (code == 'MP') {
+    return 'assets/images/nasi.png';
+  }
+
+  if (code == 'LH') {
+    if (name.contains('ayam')) {
+      return 'assets/images/ayam.png';
+    }
+
+    if (name.contains('ikan') ||
+        name.contains('tongkol') ||
+        name.contains('lele') ||
+        name.contains('bandeng') ||
+        name.contains('kembung') ||
+        name.contains('tuna') ||
+        name.contains('belut') ||
+        name.contains('salmon') ||
+        name.contains('sarden')) {
+      return 'assets/images/ikan.png';
+    }
+
+    return 'assets/images/daging.png';
+  }
+
+  if (code == 'LN') {
+    if (name.contains('tempe')) {
+      return 'assets/images/tempe.png';
+    }
+
+    return 'assets/images/kacang.png';
+  }
+
+  if (code == 'S' ||
+      name.contains('sayur') ||
+      name.contains('bayam') ||
+      name.contains('kangkung') ||
+      name.contains('wortel') ||
+      name.contains('buncis') ||
+      name.contains('sawi')) {
+    return 'assets/images/sayur.png';
+  }
+
+  if (code == 'B' ||
+      name.contains('buah') ||
+      name.contains('pisang') ||
+      name.contains('apel') ||
+      name.contains('jeruk') ||
+      name.contains('pepaya') ||
+      name.contains('melon') ||
+      name.contains('semangka')) {
+    return 'assets/images/buah.png';
+  }
+
+  if (code == 'M' ||
+      code == 'G' ||
+      name.contains('minyak') ||
+      name.contains('margarin') ||
+      name.contains('mentega')) {
+    return 'assets/images/minyak.png';
+  }
+
+  if (code == 'SS') {
+    return 'assets/images/buah.png';
+  }
+
+  return 'assets/images/nasi.png';
+}
+
 int toInt(dynamic value) {
   if (value == null) return 0;
   if (value is int) return value;
@@ -1211,4 +1533,174 @@ double toDouble(dynamic value) {
   if (value is String) return double.tryParse(value) ?? 0.0;
 
   return 0.0;
+}
+
+class EatenFoodTray extends StatelessWidget {
+  const EatenFoodTray({
+    super.key,
+    required this.items,
+    required this.scrollController,
+    required this.progress,
+    required this.totalItems,
+  });
+
+  final List<MenuItem> items;
+  final ScrollController scrollController;
+  final double progress;
+  final int totalItems;
+
+  static const Color accent = Color(0xFF2F5D50);
+  static const Color background = Color(0xFFF7F7F7);
+  static const Color borderSoft = Color(0xFFE3E3E3);
+
+  @override
+  Widget build(BuildContext context) {
+    final showEmptySlot = items.length < totalItems;
+    final itemCount = items.length + (showEmptySlot ? 1 : 0);
+    return Container(
+      decoration: const BoxDecoration(
+        color: background,
+        border: Border(top: BorderSide(color: borderSoft, width: 1)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 3,
+              backgroundColor: const Color(0xFFE8E8E8),
+              color: accent,
+            ),
+          ),
+          SizedBox(height: 12),
+          Text(
+            'Makanan Terkonsumsi',
+            style: TextStyle(fontWeight: FontWeight.w900, color: accent),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
+            child: SizedBox(
+              height: 64,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                child: ListView.separated(
+                  key: ValueKey(items.map((item) => item.menuItemId).join('-')),
+                  controller: scrollController,
+                  scrollDirection: Axis.horizontal,
+                  itemCount: itemCount,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) {
+                    if (showEmptySlot && index == items.length) {
+                      return const _EmptyFoodSlot();
+                    }
+                    final item = items[index];
+                    final imageAsset = getFoodImageAsset(
+                      categoryCode: item.categoryCode,
+                      foodName: item.foodName,
+                    );
+                    return AnimatedScale(
+                      key: ValueKey(item.menuItemId),
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutBack,
+                      scale: 1,
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 180),
+                        opacity: 1,
+                        child: Container(
+                          width: 52,
+                          height: 52,
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Image.asset(imageAsset, fit: BoxFit.contain),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyFoodSlot extends StatelessWidget {
+  const _EmptyFoodSlot();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(width: 52, height: 52);
+  }
+}
+
+class _EatenActionButton extends StatelessWidget {
+  const _EatenActionButton({
+    required this.isEaten,
+    required this.isBusy,
+    required this.onPressed,
+  });
+
+  final bool isEaten;
+  final bool isBusy;
+  final VoidCallback? onPressed;
+
+  static const Color accent = Color(0xFF2F5D50);
+  static const Color borderSoft = Color(0xFFE8E8E8);
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isEaten ? Color.fromARGB(255, 138, 138, 138) : accent;
+    final backgroundColor = isEaten
+        ? const Color.fromARGB(255, 199, 197, 197)
+        : const Color(0xFFEFF4F1);
+
+    return Material(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          width: 20,
+          height: 20,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: isBusy ? borderSoft : color.withValues(alpha: 0.18),
+              width: 1,
+            ),
+          ),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            child: isBusy
+                ? SizedBox(
+                    key: const ValueKey('loading'),
+                    width: 8,
+                    height: 8,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: color,
+                    ),
+                  )
+                : Icon(
+                    isEaten ? Icons.close_rounded : Icons.check_rounded,
+                    key: ValueKey(isEaten ? 'close' : 'check'),
+                    size: 12,
+                    color: color,
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
 }

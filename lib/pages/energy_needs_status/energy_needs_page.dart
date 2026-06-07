@@ -17,7 +17,7 @@ class EnergyNeedsPage extends StatefulWidget {
 }
 
 class _EnergyNeedsPageState extends State<EnergyNeedsPage> {
-  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreen = Color(0xFF2F5D50);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
 

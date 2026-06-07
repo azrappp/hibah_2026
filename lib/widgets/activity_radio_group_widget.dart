@@ -56,8 +56,8 @@ class ActivityRadioGroupWidget extends StatelessWidget {
   final Activity? value;
   final ValueChanged<Activity?> onChanged;
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
   static const Color borderSoft = Color(0xFFE8E8E8);
@@ -97,8 +97,8 @@ class ActivityOptionCard extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
   static const Color borderSoft = Color(0xFFE8E8E8);

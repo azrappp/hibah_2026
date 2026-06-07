@@ -13,7 +13,7 @@ class ActivityStepPage extends StatefulWidget {
 }
 
 class _ActivityStepPageState extends State<ActivityStepPage> {
-  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreen = Color(0xFF2F5D50);
   static const Color textMedium = Color(0xFF666666);
 
   @override

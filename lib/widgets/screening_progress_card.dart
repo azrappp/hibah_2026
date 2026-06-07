@@ -19,8 +19,8 @@ class ScreeningProgressCard extends StatelessWidget {
   final String unit;
   final List<String>? labels;
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color backgroundWhite = Colors.white;
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
@@ -149,7 +149,7 @@ class TrendBadge extends StatelessWidget {
   final String trend;
 
   static const Color healthGreen = Color.fromARGB(255, 0, 123, 35);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color warning = Color(0xFFE89B22);
   static const Color warningSoft = Color(0xFFFFF4E5);
   static const Color neutral = Color(0xFF8A8A8A);

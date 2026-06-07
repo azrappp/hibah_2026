@@ -39,6 +39,7 @@ class BloodSugarStatusFlowDelegate extends ChangeNotifier
         ),
         headers: {'Accept': 'application/json'},
       );
+
       if (response.statusCode == 200) {
         debugPrint(response.body);
         final mapResponse = jsonDecode(response.body);
@@ -61,6 +62,6 @@ class BloodSugarStatusFlowDelegate extends ChangeNotifier
 
   @override
   Future<ApiResponse> onNext() async {
-    return apiResponse!;
+    return apiResponse ?? ApiResponse(success: false);
   }
 }

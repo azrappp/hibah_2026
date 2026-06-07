@@ -13,7 +13,7 @@ class ClinicalStatusPage extends StatefulWidget {
 }
 
 class _ClinicalStatusPageState extends State<ClinicalStatusPage> {
-  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreen = Color(0xFF2F5D50);
 
   @override
   void initState() {
@@ -133,8 +133,8 @@ class ClinicalResultCard extends StatelessWidget {
   final String message;
   final bool isNormal;
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color warningSoft = Color(0xFFFFF4E5);
   static const Color warning = Color(0xFFE89B22);
   static const Color textDark = Color(0xFF25262A);

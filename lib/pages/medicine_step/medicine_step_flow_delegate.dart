@@ -16,14 +16,37 @@ class MedicineStepFlowDelegate extends ChangeNotifier
   final bool backable;
   final hyDrugController = TextEditingController();
   final dmDrugController = TextEditingController();
-
   bool _isLoading = false;
-
+  ApiResponse? apiResponse;
   @override
   bool get canGoBack => backable;
 
   @override
   bool get isLoading => _isLoading;
+
+  bool get hasMedicine {
+    return hyDrugController.text.trim().isNotEmpty ||
+        dmDrugController.text.trim().isNotEmpty;
+  }
+
+  bool get shouldStopForInsulin {
+    final medicationAssessment = apiResponse?.data?['data'];
+
+    return medicationAssessment?['usesInsulin'] == true;
+  }
+
+  String get insulinAlertMessage {
+    final medicationAssessment = apiResponse?.data?['data'];
+
+    return medicationAssessment?['insulinAlertStatus']?.toString() ??
+        'Silakan konsultasi lebih lanjut dengan dokter penyakit dalam dan ahli gizi.';
+  }
+
+  void clearMedicineFields() {
+    hyDrugController.clear();
+    dmDrugController.clear();
+    notifyListeners();
+  }
 
   @override
   Future<ApiResponse> onNext() async {
@@ -41,10 +64,13 @@ class MedicineStepFlowDelegate extends ChangeNotifier
       );
       if (response.statusCode == 201) {
         debugPrint(response.body);
-        final mapResponse = jsonDecode(response.body);
-        return ApiResponse(success: true, data: mapResponse);
-      }
 
+        final mapResponse = jsonDecode(response.body);
+
+        apiResponse = ApiResponse(success: true, data: mapResponse);
+
+        return apiResponse!;
+      }
       debugPrint('HTTP Error: ${response.statusCode} - ${response.body}');
       return ApiResponse(success: false);
     } catch (e) {

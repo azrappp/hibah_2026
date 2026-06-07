@@ -15,7 +15,7 @@ class IdentityStepPage extends StatefulWidget {
 class IdentityStepPageState extends State<IdentityStepPage> {
   final formKey = GlobalKey<FormState>();
 
-  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreen = Color(0xFF2F5D50);
   static const Color textMedium = Color(0xFF666666);
   static const Color borderSoft = Color(0xFFE8E8E8);
 
@@ -144,7 +144,7 @@ class GenderSection extends StatelessWidget {
 
   final Widget child;
 
-  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreen = Color(0xFF2F5D50);
   static const Color greySoft = Color(
     0xFFF4F4F5,
   ); // Added a neutral background color

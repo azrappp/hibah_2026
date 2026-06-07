@@ -1,11 +1,11 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hibah_2026/config/app_config.dart';
 import 'package:hibah_2026/widgets/screening_progress_card.dart';
 import 'package:hibah_2026/main.dart';
 import 'package:hibah_2026/models/client_screening_history.dart';
+import 'package:hibah_2026/pages/screening_history/screening_history_list_page.dart';
 import 'package:hibah_2026/pages/screening_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -27,7 +27,7 @@ class _ScreeningMonitoringPageState extends State<ScreeningMonitoringPage> {
 
   ClientScreeningHistory? screeningHistory;
 
-  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreen = Color(0xFF2F5D50);
   static const Color background = Color(0xFFF7F7F7);
   static const Color textDark = Color(0xFF25262A);
 
@@ -35,6 +35,17 @@ class _ScreeningMonitoringPageState extends State<ScreeningMonitoringPage> {
   void initState() {
     super.initState();
     fetchScreeningHistory();
+  }
+
+  Future<void> openScreeningList() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ScreeningHistoryListPage(clientId: widget.clientId),
+      ),
+    );
+
+    await fetchScreeningHistory();
   }
 
   Future<void> fetchScreeningHistory() async {
@@ -79,59 +90,21 @@ class _ScreeningMonitoringPageState extends State<ScreeningMonitoringPage> {
   }
 
   Future<void> startNewScreening() async {
-    try {
-      setState(() {
-        isStartingScreening = true;
-        errorMessage = null;
-      });
-
-      final response = await http.post(
-        AppConfig.apiUri('/api/screening/${widget.clientId}/new-screening'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (!mounted) return;
-
-      if (response.statusCode != 201) {
-        setState(() {
-          errorMessage = 'Gagal membuat screening baru.';
-        });
-        return;
-      }
-
-      final body = jsonDecode(response.body);
-      final screeningId = body['data']['screeningId'].toString();
-
-      if (!mounted) return;
-
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChangeNotifierProvider(
-            create: (_) => FlowController(
-              clientId: widget.clientId,
-              screeningId: screeningId,
-              isRepeatScreening: true,
-            ),
-            child: const ScreeningPage(),
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider(
+          create: (_) => FlowController(
+            clientId: widget.clientId,
+            screeningId: null,
+            isRepeatScreening: true,
           ),
+          child: const ScreeningPage(),
         ),
-      );
+      ),
+    );
 
-      await fetchScreeningHistory();
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        errorMessage = 'Tidak dapat terhubung ke server.';
-      });
-    } finally {
-      if (!mounted) return;
-
-      setState(() {
-        isStartingScreening = false;
-      });
-    }
+    await fetchScreeningHistory();
   }
 
   @override
@@ -171,31 +144,62 @@ class _ScreeningMonitoringPageState extends State<ScreeningMonitoringPage> {
 
                 const SizedBox(height: 18),
 
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: FilledButton.icon(
-                    onPressed: isStartingScreening ? null : startNewScreening,
-                    label: Text(
-                      isStartingScreening
-                          ? 'Membuat Screening...'
-                          : 'Screening Ulang',
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 54,
+                        child: TextButton(
+                          onPressed: openScreeningList,
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: healthGreen,
+                            disabledForegroundColor: healthGreen.withValues(
+                              alpha: 0.5,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: const Text('Daftar Screening'),
+                        ),
+                      ),
                     ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: healthGreen,
-                      disabledBackgroundColor: healthGreen.withValues(
-                        alpha: 0.35,
-                      ),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
+
+                    const SizedBox(width: 12),
+
+                    Expanded(
+                      child: SizedBox(
+                        height: 54,
+                        child: TextButton(
+                          onPressed: isStartingScreening
+                              ? null
+                              : startNewScreening,
+                          style: TextButton.styleFrom(
+                            backgroundColor: healthGreen,
+                            foregroundColor: Colors.white,
+                            disabledForegroundColor: healthGreen.withValues(
+                              alpha: 0.5,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(
+                            isStartingScreening ? 'Membuat...' : 'Perbaru Data',
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
 
                 const SizedBox(height: 20),
@@ -311,8 +315,8 @@ class ClientHeaderCard extends StatelessWidget {
 
   final ClientScreeningHistory history;
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
   static const Color borderSoft = Color(0xFFE8E8E8);
@@ -431,8 +435,8 @@ class GenderAvatar extends StatelessWidget {
 class EmptyScreeningCard extends StatelessWidget {
   const EmptyScreeningCard({super.key});
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
   static const Color borderSoft = Color(0xFFE8E8E8);

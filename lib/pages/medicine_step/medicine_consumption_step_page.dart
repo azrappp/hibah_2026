@@ -16,7 +16,7 @@ class _MedicineConsumptionStepPageState
     extends State<MedicineConsumptionStepPage> {
   final formKey = GlobalKey<FormState>();
 
-  static const Color healthGreen = Color(0xFF04C83A);
+  static const Color healthGreen = Color(0xFF2F5D50);
   static const Color textMedium = Color(0xFF666666);
 
   @override
@@ -44,7 +44,7 @@ class _MedicineConsumptionStepPageState
                   decoration: cleanInputDecoration(
                     label: 'Obat Hipertensi',
                     hint: 'Contoh: Amlodipine',
-                    helper: 'Kosongkan jika tidak mengonsumsi obat hipertensi',
+                    helper: 'Kosongkan jika tidak mengonsumsi obat',
                   ),
                 ),
 
@@ -55,9 +55,9 @@ class _MedicineConsumptionStepPageState
                   keyboardType: TextInputType.text,
                   textInputAction: TextInputAction.done,
                   decoration: cleanInputDecoration(
-                    label: 'Obat Diabetes',
-                    hint: 'Contoh: Metformin',
-                    helper: 'Kosongkan jika tidak mengonsumsi obat diabetes',
+                    label: 'Obat Diabetes / Insulin',
+                    hint: 'Contoh: Metformin atau Insulin',
+                    helper: 'Kosongkan jika tidak mengonsumsi obat',
                   ),
                 ),
               ],

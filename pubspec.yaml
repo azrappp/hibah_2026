@@ -70,6 +70,7 @@ flutter:
     - assets/icons/female.svg
     - assets/icons/male.svg
     - assets/icons/icon.png
+    - assets/images/
     - .env
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg

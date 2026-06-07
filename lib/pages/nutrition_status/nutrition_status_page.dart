@@ -12,12 +12,13 @@ class NutritionStatusPage extends StatefulWidget {
 }
 
 class _NutritionStatusPageState extends State<NutritionStatusPage> {
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
   static const Color borderSoft = Color(0xFFE8E8E8);
-
+  static const Color dangerRed = Color(0xFFE53935);
+  static const Color dangerRedSoft = Color(0xFFFFEBEE);
   @override
   void initState() {
     super.initState();
@@ -34,15 +35,31 @@ class _NutritionStatusPageState extends State<NutritionStatusPage> {
             child: CircularProgressIndicator(color: healthGreen),
           );
         }
-
         final response = widget.delegate.apiResponse;
         final data = response?.data?['data'];
-
         final bmi = formatValue(data?['bmi']);
         final bmiStatus = data?['bmiStatus']?.toString() ?? '-';
+
+        final waistStatus = data?['waistStatus']?.toString() ?? '-';
+
         final height = formatValue(data?['heightCm']);
         final weight = formatValue(data?['weightKg']);
         final waist = formatValue(data?['waistCircumferenceCm']);
+        final isCentralObesity = waistStatus.toLowerCase() == 'high risk';
+        final labelColor = isCentralObesity ? dangerRed : healthGreen;
+        final labelBgColor = isCentralObesity ? dangerRedSoft : healthGreenSoft;
+        String getImtLabel({
+          required String bmiStatus,
+          required String waistStatus,
+        }) {
+          final isCentralObesity = waistStatus.toLowerCase() == 'high risk';
+
+          if (isCentralObesity) {
+            return '$bmiStatus • Obesitas Sentral';
+          }
+
+          return bmiStatus;
+        }
 
         return SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -96,7 +113,7 @@ class _NutritionStatusPageState extends State<NutritionStatusPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 24),
 
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -104,26 +121,30 @@ class _NutritionStatusPageState extends State<NutritionStatusPage> {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: healthGreenSoft,
+                        color: labelBgColor,
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
-                        bmiStatus,
+                        getImtLabel(
+                          bmiStatus: bmiStatus,
+                          waistStatus: waistStatus,
+                        ),
+                        textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: healthGreen,
-                          fontWeight: FontWeight.w900,
+                          color: labelColor,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 19),
 
                     Text(
                       getBmiMessage(bmiStatus),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: textMedium,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                         height: 1.45,
                       ),
                     ),
@@ -188,11 +209,11 @@ class _NutritionStatusPageState extends State<NutritionStatusPage> {
     }
 
     if (normalized.contains('underweight') || normalized.contains('kurang')) {
-      return 'Berat badan berada di bawah rentang ideal dan perlu diperhatikan.';
+      return 'Berat badan berada di bawah rentang ideal.';
     }
 
     if (normalized.contains('overweight')) {
-      return 'Berat badan berada di atas rentang ideal dan perlu dikendalikan.';
+      return 'Berat badan berada di atas rentang ideal.';
     }
 
     if (normalized.contains('obese') || normalized.contains('obesitas')) {
@@ -215,8 +236,8 @@ class SummaryCard extends StatelessWidget {
   final String value;
   final String unit;
 
-  static const Color healthGreen = Color(0xFF04C83A);
-  static const Color healthGreenSoft = Color(0xFFEAF8E9);
+  static const Color healthGreen = Color(0xFF2F5D50);
+  static const Color healthGreenSoft = Color(0xFFEFF4F1);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
   static const Color borderSoft = Color(0xFFE8E8E8);
