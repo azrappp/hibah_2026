@@ -1583,47 +1583,35 @@ class EatenFoodTray extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
             child: SizedBox(
               height: 64,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                child: ListView.separated(
-                  key: ValueKey(items.map((item) => item.menuItemId).join('-')),
-                  controller: scrollController,
-                  scrollDirection: Axis.horizontal,
-                  itemCount: itemCount,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
-                  itemBuilder: (context, index) {
-                    if (showEmptySlot && index == items.length) {
-                      return const _EmptyFoodSlot();
-                    }
-                    final item = items[index];
-                    final imageAsset = getFoodImageAsset(
-                      categoryCode: item.categoryCode,
-                      foodName: item.foodName,
-                    );
-                    return AnimatedScale(
-                      key: ValueKey(item.menuItemId),
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOutBack,
-                      scale: 1,
-                      child: AnimatedOpacity(
-                        duration: const Duration(milliseconds: 180),
-                        opacity: 1,
-                        child: Container(
-                          width: 52,
-                          height: 52,
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Image.asset(imageAsset, fit: BoxFit.contain),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+              child: ListView.separated(
+                controller: scrollController,
+                scrollDirection: Axis.horizontal,
+                itemCount: itemCount,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  if (showEmptySlot && index == items.length) {
+                    return const _EmptyFoodSlot();
+                  }
+
+                  final item = items[index];
+
+                  final imageAsset = getFoodImageAsset(
+                    categoryCode: item.categoryCode,
+                    foodName: item.foodName,
+                  );
+
+                  return Container(
+                    key: ValueKey(item.menuItemId),
+                    width: 52,
+                    height: 52,
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Image.asset(imageAsset, fit: BoxFit.contain),
+                  );
+                },
               ),
             ),
           ),
@@ -1638,7 +1626,7 @@ class _EmptyFoodSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(width: 52, height: 52);
+    return SizedBox(width: 52, height: 52);
   }
 }
 

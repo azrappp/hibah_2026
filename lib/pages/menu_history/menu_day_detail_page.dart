@@ -17,7 +17,6 @@ class _MenuDayDetailPageState extends State<MenuDayDetailPage> {
   static const Color healthGreen = Color(0xFF2F5D50);
   static const Color background = Color(0xFFF7F7F7);
   static const Color textDark = Color(0xFF25262A);
-  static const Color textMedium = Color(0xFF666666);
 
   bool isLoading = false;
   String? errorMessage;

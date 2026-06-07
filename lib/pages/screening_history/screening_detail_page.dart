@@ -492,19 +492,6 @@ class _ScreeningDetailPageState extends State<ScreeningDetailPage> {
     return '-';
   }
 
-  static String normalizeStatus(dynamic value) {
-    final text = value?.toString() ?? '-';
-
-    return text
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map((word) {
-          if (word.isEmpty) return word;
-          return word[0].toUpperCase() + word.substring(1);
-        })
-        .join(' ');
-  }
-
   static String formatValue(dynamic value) {
     if (value == null) return '-';
     final text = value.toString();
@@ -535,7 +522,6 @@ class _HeaderCard extends StatelessWidget {
   final String title;
   final String subtitle;
 
-  static const Color healthGreen = Color(0xFF2F5D50);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
 

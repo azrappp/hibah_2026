@@ -20,7 +20,6 @@ class _ScreeningHistoryListPageState extends State<ScreeningHistoryListPage> {
   static const Color healthGreen = Color(0xFF04C83A);
   static const Color background = Color(0xFFF7F7F7);
   static const Color textDark = Color(0xFF25262A);
-  static const Color textMedium = Color(0xFF666666);
 
   bool isLoading = false;
   String? errorMessage;
@@ -164,9 +163,7 @@ class _ScreeningHistoryCard extends StatelessWidget {
   final ScreeningSummary screening;
   final VoidCallback onTap;
 
-  static const Color healthGreen = Color(0xFF04C83A);
   static const Color textDark = Color(0xFF25262A);
-  static const Color textMedium = Color(0xFF666666);
 
   @override
   Widget build(BuildContext context) {

@@ -501,38 +501,6 @@ class _MenuDayCard extends StatelessWidget {
 
     return '$dayName, $day $monthName $year';
   }
-
-  static String formatNumber(double value) {
-    if (value % 1 == 0) {
-      return value.toInt().toString();
-    }
-
-    return value.toStringAsFixed(1);
-  }
-}
-
-class _SmallInfo extends StatelessWidget {
-  const _SmallInfo({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: const Color(0xFF666666),
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
 }
 
 class _PaginationFooter extends StatelessWidget {
