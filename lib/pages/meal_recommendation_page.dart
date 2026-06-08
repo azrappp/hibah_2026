@@ -90,6 +90,7 @@ class _MealRecommendationPageState extends State<MealRecommendationPage>
         isLoading = true;
         errorMessage = null;
         dailyMenu = null;
+        eatenOrderIds.clear();
       });
 
       final uri = AppConfig.apiUri(
@@ -108,12 +109,20 @@ class _MealRecommendationPageState extends State<MealRecommendationPage>
           dailyMenu = DailyMenu.fromJson(data);
         });
 
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (eatenTrayScrollController.hasClients) {
+            eatenTrayScrollController.jumpTo(0);
+          }
+        });
+
         return;
       }
 
       if (response.statusCode == 404) {
         setState(() {
           dailyMenu = null;
+          eatenOrderIds.clear();
+          errorMessage = null;
         });
 
         return;
@@ -129,11 +138,11 @@ class _MealRecommendationPageState extends State<MealRecommendationPage>
         errorMessage = 'Tidak dapat terhubung ke server.';
       });
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -258,6 +267,7 @@ class _MealRecommendationPageState extends State<MealRecommendationPage>
     if (animatingItemIds.contains(item.menuItemId)) return;
 
     final previousValue = item.isEaten;
+    final previousOrderIds = List<int>.from(eatenOrderIds);
 
     setState(() {
       animatingItemIds.add(item.menuItemId);
@@ -281,12 +291,13 @@ class _MealRecommendationPageState extends State<MealRecommendationPage>
           eatenOrderIds.remove(item.menuItemId);
         }
       });
+
       if (item.isEaten) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (eatenTrayScrollController.hasClients) {
             eatenTrayScrollController.animateTo(
               eatenTrayScrollController.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 360),
+              duration: const Duration(milliseconds: 280),
               curve: Curves.easeOutCubic,
             );
           }
@@ -306,11 +317,10 @@ class _MealRecommendationPageState extends State<MealRecommendationPage>
       if (response.statusCode != 200) {
         setState(() {
           item.isEaten = previousValue;
+          eatenOrderIds
+            ..clear()
+            ..addAll(previousOrderIds);
         });
-
-        debugPrint(
-          'Failed update eaten: ${response.statusCode} - ${response.body}',
-        );
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Gagal memperbarui status makanan.')),
@@ -321,14 +331,16 @@ class _MealRecommendationPageState extends State<MealRecommendationPage>
 
       setState(() {
         item.isEaten = previousValue;
+        eatenOrderIds
+          ..clear()
+          ..addAll(previousOrderIds);
       });
-
-      debugPrint('Exception update eaten: $e');
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tidak dapat terhubung ke server.')),
       );
-    } finally {
+    }
+    {
       if (!mounted) return;
 
       setState(() {
@@ -348,11 +360,19 @@ class _MealRecommendationPageState extends State<MealRecommendationPage>
         '/api/meal/${widget.screeningId}/menu-weekly',
       );
 
+      debugPrint('GENERATE MENU URL: $uri');
+      debugPrint(
+        'GENERATE MENU BODY: ${jsonEncode({'startDate': selectedDateString})}',
+      );
+
       final response = await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'startDate': selectedDateString}),
       );
+
+      debugPrint('GENERATE MENU STATUS: ${response.statusCode}');
+      debugPrint('GENERATE MENU RESPONSE: ${response.body}');
 
       if (!mounted) return;
 
@@ -368,21 +388,35 @@ class _MealRecommendationPageState extends State<MealRecommendationPage>
         return;
       }
 
+      String message = 'Gagal membuat rekomendasi menu.';
+
+      try {
+        final body = jsonDecode(response.body);
+        if (body is Map && body['message'] != null) {
+          message = body['message'].toString();
+        }
+      } catch (_) {
+        // response body bukan JSON
+      }
+
       setState(() {
-        errorMessage = 'Gagal membuat rekomendasi menu.';
+        errorMessage = message;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('GENERATE MENU ERROR: $e');
+      debugPrint('GENERATE MENU STACKTRACE: $stackTrace');
+
       if (!mounted) return;
 
       setState(() {
         errorMessage = 'Tidak dapat terhubung ke server.';
       });
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        isGenerating = false;
-      });
+      if (mounted) {
+        setState(() {
+          isGenerating = false;
+        });
+      }
     }
   }
 
@@ -467,7 +501,7 @@ class _MealRecommendationPageState extends State<MealRecommendationPage>
       appBar: AppBar(
         title: const Text(
           'Rekomendasi Menu',
-          style: TextStyle(fontWeight: FontWeight.w900, color: textDark),
+          style: TextStyle(fontWeight: FontWeight.w800, color: textDark),
         ),
         actions: [
           IconButton(
@@ -537,7 +571,7 @@ class _MealRecommendationPageState extends State<MealRecommendationPage>
                   'Menu Harian',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: textDark,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     letterSpacing: -0.4,
                   ),
                 ),
@@ -662,7 +696,7 @@ class DateSelectorCard extends StatelessWidget {
                       'Tanggal Menu',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: textMedium,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
 
@@ -674,7 +708,7 @@ class DateSelectorCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         color: textDark,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                         height: 1.25,
                       ),
                     ),
@@ -715,9 +749,6 @@ class DailyNutritionSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final remaining = menu.energyKcal - eatenCalories;
-    final safeRemaining = remaining < 0 ? 0 : remaining;
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
@@ -730,7 +761,7 @@ class DailyNutritionSummary extends StatelessWidget {
         children: [
           Text(
             'Target Menu Harian',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: textMedium,
               fontWeight: FontWeight.w800,
             ),
@@ -743,22 +774,10 @@ class DailyNutritionSummary extends StatelessWidget {
             style: const TextStyle(
               color: GenderRadioGroupWidget.healthGreen,
               fontFamily: 'GeistMono',
-              fontSize: 36,
+              fontSize: 16,
               height: 1,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -1.4,
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          Text(
-            'Tersisa ${safeRemaining.round()} kkal berdasarkan makanan yang sudah dimakan.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: textMedium,
               fontWeight: FontWeight.w600,
-              height: 1.35,
+              letterSpacing: -1.2,
             ),
           ),
 
@@ -812,7 +831,7 @@ class NutritionMiniCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 13),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       decoration: BoxDecoration(
         color: healthGreenSoft,
         borderRadius: BorderRadius.circular(16),
@@ -830,7 +849,7 @@ class NutritionMiniCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
 
           FittedBox(
             fit: BoxFit.scaleDown,
@@ -840,7 +859,7 @@ class NutritionMiniCard extends StatelessWidget {
                 color: textDark,
                 fontFamily: 'GeistMono',
                 fontSize: 14,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w600,
                 letterSpacing: -0.4,
               ),
             ),
@@ -887,7 +906,7 @@ class MealProgressCard extends StatelessWidget {
             'Kalori Terpenuhi',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
               color: textDark,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
             ),
           ),
 
@@ -922,7 +941,7 @@ class MealProgressCard extends StatelessWidget {
               style: const TextStyle(
                 color: healthGreen,
                 fontSize: 13,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
                 fontFamily: 'GeistMono',
               ),
             ),
@@ -961,8 +980,6 @@ class MealSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final eatenCount = meal.items.where((item) => item.isEaten).length;
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -991,7 +1008,7 @@ class MealSectionCard extends StatelessWidget {
             mealTimeLabel(meal.mealTime),
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
               color: textDark,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w600,
             ),
           ),
           children: [
@@ -1123,7 +1140,7 @@ class MealItemTile extends StatelessWidget {
                     style: TextStyle(
                       color: isEaten ? textMedium : textDark,
                       fontSize: 14,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w700,
                       height: 1.3,
                     ),
                   ),
@@ -1221,7 +1238,7 @@ class EmptyMenuCard extends StatelessWidget {
             'Menu belum tersedia',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: textDark,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
             ),
           ),
 
@@ -1267,7 +1284,7 @@ class EmptyMenuCard extends StatelessWidget {
                 ),
                 textStyle: const TextStyle(
                   fontSize: 15,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
@@ -1480,13 +1497,10 @@ String getFoodImageAsset({
     return 'assets/images/kacang.png';
   }
 
-  if (code == 'S' ||
-      name.contains('sayur') ||
-      name.contains('bayam') ||
-      name.contains('kangkung') ||
-      name.contains('wortel') ||
-      name.contains('buncis') ||
-      name.contains('sawi')) {
+  if (code == 'S') {
+    if (name.contains('wortel')) {
+      return 'assets/images/wortel.png';
+    }
     return 'assets/images/sayur.png';
   }
 
@@ -1508,7 +1522,9 @@ String getFoodImageAsset({
       name.contains('mentega')) {
     return 'assets/images/minyak.png';
   }
-
+  if (code == 'G') {
+    return 'assets/images/gula.png';
+  }
   if (code == 'SS') {
     return 'assets/images/buah.png';
   }
@@ -1577,7 +1593,7 @@ class EatenFoodTray extends StatelessWidget {
           SizedBox(height: 12),
           Text(
             'Makanan Terkonsumsi',
-            style: TextStyle(fontWeight: FontWeight.w900, color: accent),
+            style: TextStyle(fontWeight: FontWeight.w800, color: accent),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),

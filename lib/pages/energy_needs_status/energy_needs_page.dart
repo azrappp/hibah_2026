@@ -156,7 +156,7 @@ class _EnergyNeedsPageState extends State<EnergyNeedsPage> {
                     ),
                     textStyle: const TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   onPressed: () {

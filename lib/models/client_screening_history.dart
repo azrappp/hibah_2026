@@ -99,17 +99,47 @@ class ScreeningHistoryItem {
     required this.screeningId,
     required this.screeningDate,
     required this.screeningStatus,
+    required this.screeningResult,
   });
 
   final int screeningId;
   final String screeningDate;
   final String screeningStatus;
+  final ScreeningResultInfo screeningResult;
 
   factory ScreeningHistoryItem.fromJson(Map<String, dynamic> json) {
     return ScreeningHistoryItem(
       screeningId: json['screeningId'],
       screeningDate: json['screeningDate'] ?? '-',
       screeningStatus: json['screeningStatus'] ?? '-',
+      screeningResult: ScreeningResultInfo.fromJson(json['screeningResult']),
+    );
+  }
+}
+
+class ScreeningResultInfo {
+  ScreeningResultInfo({
+    this.diabetesStatus,
+    this.hypertensionStatus,
+    this.obesityStatus,
+    this.finalScreeningCategory,
+  });
+
+  final String? diabetesStatus;
+  final String? hypertensionStatus;
+  final String? obesityStatus;
+  final String? finalScreeningCategory;
+
+  factory ScreeningResultInfo.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return ScreeningResultInfo();
+    }
+
+    return ScreeningResultInfo(
+      diabetesStatus: json['diabetesStatus']?.toString(),
+      hypertensionStatus: json['hypertensionStatus']?.toString(),
+      obesityStatus: json['obesityStatus']?.toString(),
+      finalScreeningCategory: json['finalScreeningCategory']?.toString(),
     );
   }
 }

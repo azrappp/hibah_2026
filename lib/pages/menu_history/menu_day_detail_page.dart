@@ -61,7 +61,8 @@ class _MenuDayDetailPageState extends State<MenuDayDetailPage> {
       setState(() {
         errorMessage = 'Tidak dapat terhubung ke server.';
       });
-    } finally {
+    }
+    {
       if (!mounted) return;
 
       setState(() {
@@ -79,7 +80,7 @@ class _MenuDayDetailPageState extends State<MenuDayDetailPage> {
       appBar: AppBar(
         title: const Text(
           'Detail Menu Harian',
-          style: TextStyle(fontWeight: FontWeight.w900, color: textDark),
+          style: TextStyle(fontWeight: FontWeight.w800, color: textDark),
         ),
         backgroundColor: background,
         surfaceTintColor: background,
@@ -131,7 +132,7 @@ class _MenuDayDetailPageState extends State<MenuDayDetailPage> {
                   _HeaderCard(
                     title: formatDate(parseDate(data['menuDate'])),
                     subtitle:
-                        'Hari ke-${formatValue(data['dayNumber'])} • Diet ${formatValue(recommendation?['dietType'])}',
+                        'Diet ${formatValue(recommendation?['dietType'])}',
                   ),
 
                   const SizedBox(height: 14),
@@ -423,13 +424,11 @@ class _FoodItemCard extends StatelessWidget {
 
   final Map<String, dynamic> item;
 
-  static const Color healthGreen = Color(0xFF2F5D50);
   static const Color textDark = Color(0xFF25262A);
   static const Color textMedium = Color(0xFF666666);
 
   @override
   Widget build(BuildContext context) {
-    final categoryCode = item['categoryCode']?.toString() ?? '-';
     final foodName = item['foodName']?.toString() ?? '-';
     final urt = item['urt']?.toString();
     final gram = _formatNumber(item['gram']);
@@ -457,32 +456,12 @@ class _FoodItemCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: healthGreen.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  categoryCode,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: healthGreen,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 10),
-
               Expanded(
                 child: Text(
                   foodName,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: textDark,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w600,
                     height: 1.35,
                   ),
                 ),
@@ -496,7 +475,7 @@ class _FoodItemCard extends StatelessWidget {
               portionText,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: textMedium,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -568,7 +547,7 @@ class _RecapFoodRow extends StatelessWidget {
             '$gram g',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: textMedium,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -613,7 +592,7 @@ class _MealTimeGroup extends StatelessWidget {
             title,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
               color: textDark,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 4),
@@ -650,7 +629,7 @@ class _MiniChip extends StatelessWidget {
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: const Color(0xFF666666),
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -680,9 +659,9 @@ class _HeaderCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: textDark,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 8),
@@ -723,7 +702,7 @@ class _SectionCard extends StatelessWidget {
             title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: textDark,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 12),
@@ -772,7 +751,7 @@ class _DetailRow extends StatelessWidget {
               textAlign: TextAlign.right,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: highlight ? healthGreen : textDark,
-                fontWeight: highlight ? FontWeight.w900 : FontWeight.w700,
+                fontWeight: highlight ? FontWeight.w600 : FontWeight.w700,
               ),
             ),
           ),
@@ -807,7 +786,7 @@ class _InfoCard extends StatelessWidget {
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: textDark,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 8),

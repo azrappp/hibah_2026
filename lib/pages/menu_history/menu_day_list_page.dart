@@ -103,11 +103,11 @@ class _MenuDayListPageState extends State<MenuDayListPage> {
         errorMessage = 'Tidak dapat terhubung ke server.';
       });
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -141,7 +141,7 @@ class _MenuDayListPageState extends State<MenuDayListPage> {
           ),
           title: const Text(
             'Hapus Menu Terpilih?',
-            style: TextStyle(fontWeight: FontWeight.w900, color: textDark),
+            style: TextStyle(fontWeight: FontWeight.w600, color: textDark),
           ),
           content: Text(
             '${selectedIds.length} menu harian akan dihapus. Data makanan di dalam menu tersebut juga ikut terhapus.',
@@ -171,7 +171,7 @@ class _MenuDayListPageState extends State<MenuDayListPage> {
               ),
               child: const Text(
                 'Hapus',
-                style: TextStyle(fontWeight: FontWeight.w900),
+                style: TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
           ],
@@ -217,11 +217,11 @@ class _MenuDayListPageState extends State<MenuDayListPage> {
         const SnackBar(content: Text('Tidak dapat terhubung ke server')),
       );
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        isDeleting = false;
-      });
+      if (mounted) {
+        setState(() {
+          isDeleting = false;
+        });
+      }
     }
   }
 
@@ -248,7 +248,7 @@ class _MenuDayListPageState extends State<MenuDayListPage> {
           isSelectionMode
               ? '${selectedIds.length} dipilih'
               : 'Daftar Menu Harian',
-          style: const TextStyle(fontWeight: FontWeight.w900, color: textDark),
+          style: const TextStyle(fontWeight: FontWeight.w800, color: textDark),
         ),
         backgroundColor: background,
         surfaceTintColor: background,
@@ -261,7 +261,7 @@ class _MenuDayListPageState extends State<MenuDayListPage> {
                   'Batal',
                   style: TextStyle(
                     color: textDark,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               )
@@ -277,7 +277,7 @@ class _MenuDayListPageState extends State<MenuDayListPage> {
                 'Hapus',
                 style: TextStyle(
                   color: selectedIds.isEmpty ? Colors.grey : Colors.red,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
@@ -435,7 +435,7 @@ class _MenuDayCard extends StatelessWidget {
                       formatDate(menuDay.menuDate),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: textDark,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -565,7 +565,7 @@ class _PaginationFooter extends StatelessWidget {
             ),
             child: const Text(
               'Berikutnya',
-              style: TextStyle(fontWeight: FontWeight.w900),
+              style: TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
         ),
@@ -599,7 +599,7 @@ class _InfoCard extends StatelessWidget {
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: textDark,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 8),

@@ -144,7 +144,7 @@ class ActivityOptionCard extends StatelessWidget {
                       activity.label,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         color: textDark,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 5),

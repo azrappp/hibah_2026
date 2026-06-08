@@ -118,8 +118,6 @@ class _ScreeningPageState extends State<ScreeningPage> {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
               decoration: const BoxDecoration(color: background),
 
-              // IMPORTANT:
-              // This listens to the delegate loading state.
               child: ListenableBuilder(
                 listenable: delegate as Listenable,
                 builder: (context, _) {
@@ -171,7 +169,7 @@ class _ScreeningPageState extends State<ScreeningPage> {
                                 ),
                                 textStyle: const TextStyle(
                                   fontSize: 15,
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                               onPressed: isLoading

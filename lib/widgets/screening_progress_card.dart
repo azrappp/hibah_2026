@@ -7,7 +7,8 @@ class ScreeningProgressCard extends StatelessWidget {
     required this.title,
     required this.currentValue,
     required this.status,
-    required this.values,
+    required this.series,
+    required this.finalStatus,
     this.unit = '',
     this.labels,
   });
@@ -15,7 +16,8 @@ class ScreeningProgressCard extends StatelessWidget {
   final String title;
   final String currentValue;
   final String status;
-  final List<double> values;
+  final String finalStatus;
+  final List<ChartSeries> series;
   final String unit;
   final List<String>? labels;
 
@@ -29,8 +31,6 @@ class ScreeningProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final trend = getTrend(values);
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
@@ -51,14 +51,14 @@ class ScreeningProgressCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: textDark,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
 
               const SizedBox(width: 8),
 
-              TrendBadge(trend: trend),
+              FinalStatusBadge(status: finalStatus),
             ],
           ),
 
@@ -76,7 +76,7 @@ class ScreeningProgressCard extends StatelessWidget {
                     style: const TextStyle(
                       color: textDark,
                       fontFamily: 'GeistMono',
-                      fontSize: 30,
+                      fontSize: 18,
                       height: 1,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -1.1,
@@ -87,7 +87,7 @@ class ScreeningProgressCard extends StatelessWidget {
               if (unit.isNotEmpty) ...[
                 const SizedBox(width: 5),
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 3),
+                  padding: const EdgeInsets.only(top: 3),
                   child: Text(
                     unit,
                     style: const TextStyle(
@@ -124,59 +124,65 @@ class ScreeningProgressCard extends StatelessWidget {
 
           const SizedBox(height: 14),
 
-          MiniLineChart(values: values, labels: labels, unit: unit, height: 86),
+          MiniLineChart(
+            series: series,
+            labels: labels,
+            unit: unit,
+            height: 110,
+          ),
         ],
       ),
     );
   }
-
-  String getTrend(List<double> values) {
-    if (values.length < 2) return 'stabil';
-
-    final first = values.first;
-    final last = values.last;
-
-    if (last > first) return 'naik';
-    if (last < first) return 'turun';
-
-    return 'stabil';
-  }
 }
 
-class TrendBadge extends StatelessWidget {
-  const TrendBadge({super.key, required this.trend});
+class FinalStatusBadge extends StatelessWidget {
+  const FinalStatusBadge({super.key, required this.status});
 
-  final String trend;
+  final String status;
 
-  static const Color healthGreen = Color.fromARGB(255, 0, 123, 35);
-  static const Color healthGreenSoft = Color(0xFFEFF4F1);
+  static const Color good = Color(0xFF2F5D50);
+  static const Color goodSoft = Color(0xFFEFF4F1);
+
   static const Color warning = Color(0xFFE89B22);
   static const Color warningSoft = Color(0xFFFFF4E5);
-  static const Color neutral = Color(0xFF8A8A8A);
+
+  static const Color danger = Color(0xFFB85C5C);
+  static const Color dangerSoft = Color(0xFFFFF1F1);
+
+  static const Color neutral = Color(0xFF666666);
   static const Color neutralSoft = Color(0xFFF1F1F1);
 
   @override
   Widget build(BuildContext context) {
-    final isUp = trend == 'naik';
-    final isDown = trend == 'turun';
+    final normalized = status.toLowerCase();
 
-    final Color color = isUp
-        ? warning
-        : isDown
-        ? healthGreen
-        : neutral;
+    final bool isNormal = normalized.contains('normal');
+    final bool isWarning =
+        normalized.contains('pre') ||
+        normalized.contains('overweight') ||
+        normalized.contains('elevated') ||
+        normalized.contains('risk');
 
-    final Color backgroundColor = isUp
-        ? warningSoft
-        : isDown
-        ? healthGreenSoft
-        : neutralSoft;
+    final bool isDanger =
+        normalized.contains('diabetes') ||
+        normalized.contains('hypertension') ||
+        normalized.contains('obesity') ||
+        normalized.contains('obesitas');
 
-    final IconData icon = isUp
-        ? Icons.trending_up_rounded
-        : isDown
-        ? Icons.trending_down_rounded
-        : Icons.trending_flat_rounded;
+    Color color = neutral;
+    Color backgroundColor = neutralSoft;
+
+    if (isNormal) {
+      color = good;
+      backgroundColor = goodSoft;
+    } else if (isDanger) {
+      color = danger;
+      backgroundColor = dangerSoft;
+    } else if (isWarning) {
+      color = warning;
+      backgroundColor = warningSoft;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
@@ -184,20 +190,13 @@ class TrendBadge extends StatelessWidget {
         color: backgroundColor,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 15),
-          const SizedBox(width: 4),
-          Text(
-            trend,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
+      child: Text(
+        status.isEmpty ? '-' : status,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

@@ -68,11 +68,11 @@ class _ScreeningHistoryListPageState extends State<ScreeningHistoryListPage> {
         errorMessage = 'Tidak dapat terhubung ke server.';
       });
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -83,7 +83,7 @@ class _ScreeningHistoryListPageState extends State<ScreeningHistoryListPage> {
       appBar: AppBar(
         title: const Text(
           'Daftar Screening',
-          style: TextStyle(fontWeight: FontWeight.w900, color: textDark),
+          style: TextStyle(fontWeight: FontWeight.w800, color: textDark),
         ),
         backgroundColor: background,
         surfaceTintColor: background,
@@ -319,7 +319,7 @@ class _InfoCard extends StatelessWidget {
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: textDark,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 8),

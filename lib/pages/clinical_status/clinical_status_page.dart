@@ -169,7 +169,7 @@ class ClinicalResultCard extends StatelessWidget {
           Text(
             diagnosis,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: accentColor,
               letterSpacing: -0.4,
             ),

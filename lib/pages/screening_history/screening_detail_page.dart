@@ -57,7 +57,8 @@ class _ScreeningDetailPageState extends State<ScreeningDetailPage> {
       setState(() {
         errorMessage = 'Tidak dapat terhubung ke server.';
       });
-    } finally {
+    }
+    {
       if (!mounted) return;
 
       setState(() {
@@ -78,7 +79,7 @@ class _ScreeningDetailPageState extends State<ScreeningDetailPage> {
           ),
           title: const Text(
             'Hapus Screening?',
-            style: TextStyle(fontWeight: FontWeight.w900, color: textDark),
+            style: TextStyle(fontWeight: FontWeight.w800, color: textDark),
           ),
           content: const Text(
             'Data screening ini akan dihapus permanen, termasuk hasil pemeriksaan dan rekomendasi menu yang terkait.',
@@ -108,7 +109,7 @@ class _ScreeningDetailPageState extends State<ScreeningDetailPage> {
               ),
               child: const Text(
                 'Hapus',
-                style: TextStyle(fontWeight: FontWeight.w900),
+                style: TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
           ],
@@ -155,11 +156,11 @@ class _ScreeningDetailPageState extends State<ScreeningDetailPage> {
         errorMessage = 'Tidak dapat terhubung ke server.';
       });
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -172,7 +173,7 @@ class _ScreeningDetailPageState extends State<ScreeningDetailPage> {
       appBar: AppBar(
         title: const Text(
           'Detail Screening',
-          style: TextStyle(fontWeight: FontWeight.w900, color: textDark),
+          style: TextStyle(fontWeight: FontWeight.w800, color: textDark),
         ),
         backgroundColor: background,
         surfaceTintColor: background,
@@ -541,7 +542,7 @@ class _HeaderCard extends StatelessWidget {
             title,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               color: textDark,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
               letterSpacing: -0.5,
             ),
           ),
@@ -583,7 +584,7 @@ class _SectionCard extends StatelessWidget {
             title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: textDark,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 12),
@@ -635,7 +636,7 @@ class _DetailRow extends StatelessWidget {
               textAlign: TextAlign.right,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: highlight ? healthGreen : textDark,
-                fontWeight: highlight ? FontWeight.w900 : FontWeight.w700,
+                fontWeight: highlight ? FontWeight.w800 : FontWeight.w700,
                 height: 1.35,
               ),
             ),
@@ -671,7 +672,7 @@ class _InfoCard extends StatelessWidget {
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: textDark,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 8),

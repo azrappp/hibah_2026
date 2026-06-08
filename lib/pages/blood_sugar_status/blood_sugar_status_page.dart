@@ -78,7 +78,7 @@ class _BloodSugarStatusPageState extends State<BloodSugarStatusPage> {
                       diagnosis,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w800,
                             color: healthGreen,
                             letterSpacing: -0.4,
                           ),

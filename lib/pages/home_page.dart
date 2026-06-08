@@ -224,6 +224,7 @@ class _HomePageState extends State<HomePage> {
       },
     );
 
+    if (!mounted) return;
     if (confirmed != true) return;
 
     final session = context.read<AppSession>();
@@ -286,7 +287,7 @@ class _HomePageState extends State<HomePage> {
                 style: TextStyle(
                   fontSize: 18,
                   height: 1,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textDark,
                 ),
               ),
@@ -825,11 +826,11 @@ class HomeViewData {
   static String getGreeting() {
     final hour = DateTime.now().hour;
 
-    if (hour < 11) return 'Selamat Pagi';
-    if (hour < 15) return 'Selamat Siang';
-    if (hour < 18) return 'Selamat Sore';
+    if (hour < 11) return 'Selamat Pagi!';
+    if (hour < 15) return 'Selamat Siang!';
+    if (hour < 18) return 'Selamat Sore!';
 
-    return 'Selamat Malam';
+    return 'Selamat Malam!';
   }
 
   static String normalizeActivity(String? value) {
@@ -977,7 +978,7 @@ class HomeHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${data.greeting}',
+                data.greeting.toString(),
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
@@ -990,7 +991,7 @@ class HomeHeader extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 15,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textDark,
                 ),
               ),
@@ -1044,7 +1045,7 @@ class StreakBadge extends StatelessWidget {
           value.toString(),
           style: const TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w800,
             color: AppColors.textMuted,
           ),
         ),
@@ -1142,7 +1143,7 @@ class TargetCalorieText extends StatelessWidget {
       text: TextSpan(
         style: const TextStyle(
           fontSize: 16,
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w800,
           color: AppColors.textDark,
         ),
         children: [
@@ -1292,7 +1293,7 @@ class CalorieSideInfo extends StatelessWidget {
           'Makanan Dimakan',
           style: TextStyle(
             fontSize: 13,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w800,
             color: AppColors.textMedium,
           ),
         ),
@@ -1303,7 +1304,7 @@ class CalorieSideInfo extends StatelessWidget {
             const Icon(
               Icons.rice_bowl_outlined,
               size: 24,
-              color: AppColors.beige,
+              color: Color.fromARGB(255, 60, 60, 59),
             ),
 
             const SizedBox(width: 8),
@@ -1318,7 +1319,7 @@ class CalorieSideInfo extends StatelessWidget {
                     fontFamily: 'GeistMono',
                     fontSize: 18,
                     height: 1,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textDark,
                   ),
                 ),
@@ -1343,7 +1344,7 @@ class CalorieSideInfo extends StatelessWidget {
           'Aktifitas Fisik',
           style: TextStyle(
             fontSize: 13,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w800,
             color: AppColors.textMedium,
           ),
         ),
@@ -1351,7 +1352,11 @@ class CalorieSideInfo extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Icon(Icons.directions_walk, size: 24, color: AppColors.beige),
+            const Icon(
+              Icons.directions_walk,
+              size: 24,
+              color: Color.fromARGB(255, 121, 121, 120),
+            ),
 
             const SizedBox(width: 4),
 
@@ -1360,12 +1365,12 @@ class CalorieSideInfo extends StatelessWidget {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  '${data.activityLevel}',
+                  data.activityLevel.toString(),
                   style: const TextStyle(
                     fontFamily: 'GeistMono',
                     fontSize: 12,
                     height: 1,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textDark,
                   ),
                 ),
@@ -1468,7 +1473,7 @@ class SectionHeader extends StatelessWidget {
             title,
             style: const TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: AppColors.textDark,
             ),
           ),
@@ -1481,7 +1486,7 @@ class SectionHeader extends StatelessWidget {
               actionText,
               style: const TextStyle(
                 fontSize: 10,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
                 color: AppColors.textSoft,
               ),
             ),
@@ -1518,7 +1523,7 @@ class HealthMonitorCard extends StatelessWidget {
                         'Pantau Perkembangan',
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w800,
                           color: AppColors.textDark,
                         ),
                       ),
@@ -1621,7 +1626,7 @@ class HealthMetricCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 10,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
                 color: AppColors.textMedium,
               ),
             ),
@@ -1639,7 +1644,7 @@ class HealthMetricCard extends StatelessWidget {
                           text: value,
                           style: const TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                         TextSpan(
@@ -1715,20 +1720,19 @@ class MealCard extends StatelessWidget {
                         meal.title,
                         style: const TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w800,
                           color: AppColors.textDark,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Text('🔥', style: TextStyle(fontSize: 16)),
                           const SizedBox(width: 6),
                           Text(
                             meal.calories.toString(),
                             style: const TextStyle(
                               fontSize: 15,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w800,
                               color: AppColors.textDark,
                             ),
                           ),
@@ -1737,7 +1741,7 @@ class MealCard extends StatelessWidget {
                             'kkal',
                             style: TextStyle(
                               fontSize: 11,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w800,
                               color: AppColors.textMuted,
                             ),
                           ),
