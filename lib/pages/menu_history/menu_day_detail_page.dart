@@ -47,6 +47,7 @@ class _MenuDayDetailPageState extends State<MenuDayDetailPage> {
 
         setState(() {
           detail = body['data'];
+          isLoading = false;
         });
 
         return;
@@ -54,18 +55,13 @@ class _MenuDayDetailPageState extends State<MenuDayDetailPage> {
 
       setState(() {
         errorMessage = 'Gagal memuat detail menu.';
+        isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
         errorMessage = 'Tidak dapat terhubung ke server.';
-      });
-    }
-    {
-      if (!mounted) return;
-
-      setState(() {
         isLoading = false;
       });
     }
@@ -131,8 +127,7 @@ class _MenuDayDetailPageState extends State<MenuDayDetailPage> {
                 children: [
                   _HeaderCard(
                     title: formatDate(parseDate(data['menuDate'])),
-                    subtitle:
-                        'Diet ${formatValue(recommendation?['dietType'])}',
+                    subtitle: '',
                   ),
 
                   const SizedBox(height: 14),
